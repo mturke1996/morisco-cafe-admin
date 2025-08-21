@@ -202,9 +202,9 @@ export const generateDebtsReportPDF = ({ data, config }: DebtsReportData) => {
           </div>
           <div class="title">تقرير الديون<br/><small>${new Date(
             config.startDate
-          ).toLocaleDateString("ar-LY")} - ${new Date(
+          ).toLocaleDateString("en-GB")} - ${new Date(
     config.endDate
-  ).toLocaleDateString("ar-LY")}</small></div>
+  ).toLocaleDateString("en-GB")}</small></div>
         </div>
         
         <div class="report-body">
@@ -253,7 +253,7 @@ export const generateDebtsReportPDF = ({ data, config }: DebtsReportData) => {
                   (debt) => `
                 <tr>
                   <td>${new Date(debt.debt_date).toLocaleDateString(
-                    "ar-LY"
+                    "en-GB"
                   )}</td>
                   <td>${debt.customers?.name || "غير محدد"}</td>
                   <td>${debt.description || "-"}</td>
@@ -287,7 +287,7 @@ export const generateDebtsReportPDF = ({ data, config }: DebtsReportData) => {
         </div>
         
         <div class="report-footer">تم إنشاء هذا التقرير في ${new Date().toLocaleDateString(
-          "ar-LY"
+          "en-GB"
         )} - ${brand.companyName}</div>
       </div>
       

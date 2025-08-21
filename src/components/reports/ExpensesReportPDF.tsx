@@ -36,7 +36,7 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
   if (!reportWindow) return;
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('ar-LY');
+    return new Date(dateStr).toLocaleDateString('en-GB');
   };
 
   const formatCurrency = (amount: number) => {

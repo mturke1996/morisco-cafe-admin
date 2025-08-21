@@ -1,5 +1,9 @@
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, X } from "lucide-react";
 import { ShiftClosureData } from "@/hooks/useShiftClosure";
@@ -10,24 +14,31 @@ interface PrintShiftClosureModalProps {
   closure: ShiftClosureData | null;
 }
 
-const PrintShiftClosureModal = ({ open, onOpenChange, closure }: PrintShiftClosureModalProps) => {
+const PrintShiftClosureModal = ({
+  open,
+  onOpenChange,
+  closure,
+}: PrintShiftClosureModalProps) => {
   if (!closure) return null;
 
   const formatCurrency = (amount: number) => `${amount.toFixed(2)} د.ل`;
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('ar-LY');
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString("en-GB");
+  const unit = " د.ل";
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const isPositive = closure.difference >= 0;
+    const isPositive = closure.difference > 0;
+    const isNegative = closure.difference < 0;
 
     const htmlContent = `
       <!DOCTYPE html>
       <html dir="rtl" lang="ar">
       <head>
           <meta charset="UTF-8">
-          <title>تقرير إغلاق الوردية</title>
+          <title>فاتورة إغلاق وردية · 2026</title>
           <style>
               * {
                   margin: 0;
@@ -36,149 +47,192 @@ const PrintShiftClosureModal = ({ open, onOpenChange, closure }: PrintShiftClosu
               }
               
               body {
-                  font-family: 'Arial', sans-serif;
-                  background: white;
-                  color: #333;
+                  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                  background: #f7f7fb;
+                  color: #1f2937;
                   direction: rtl;
-                  padding: 20px;
+                  padding: 24px;
               }
               
               .container {
-                  max-width: 600px;
+                  max-width: 780px;
                   margin: 0 auto;
-                  background: white;
-                  border: 2px solid #333;
-                  border-radius: 10px;
+                  background: #fff;
+                  border: 1px solid #e5e7eb;
+                  border-radius: 16px;
                   overflow: hidden;
+                  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
               }
               
               .header {
-                  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+                  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
                   color: white;
-                  padding: 20px;
+                  padding: 24px;
                   text-align: center;
               }
               
               .logo {
-                  font-size: 2rem;
+                  font-size: 1.75rem;
                   font-weight: bold;
-                  margin-bottom: 10px;
+                  margin-bottom: 8px;
               }
               
               .report-title {
-                  font-size: 1.5rem;
-                  margin-bottom: 5px;
+                  font-size: 1.25rem;
+                  margin-bottom: 4px;
               }
               
               .report-info {
                   font-size: 1rem;
-                  opacity: 0.9;
+                  opacity: 0.85;
               }
               
               .content {
-                  padding: 20px;
+                  padding: 24px;
               }
               
               .info-grid {
                   display: grid;
                   grid-template-columns: 1fr 1fr;
-                  gap: 15px;
+                  gap: 12px;
                   margin-bottom: 20px;
               }
               
               .info-item {
                   display: flex;
                   justify-content: space-between;
-                  padding: 8px;
-                  background: #f8f9fa;
-                  border-radius: 5px;
+                  padding: 10px 12px;
+                  background: #f9fafb;
+                  border-radius: 10px;
+                  border: 1px solid #eef2f7;
               }
               
               .info-label {
                   font-weight: bold;
-                  color: #2c3e50;
+                  color: #374151;
               }
               
               .info-value {
-                  color: #34495e;
+                  color: #111827;
               }
               
               .section {
                   margin-bottom: 20px;
-                  border: 1px solid #ddd;
-                  border-radius: 8px;
+                  border: 1px solid #e5e7eb;
+                  border-radius: 14px;
                   overflow: hidden;
               }
               
               .section-header {
-                  background: #f1f2f6;
-                  padding: 10px 15px;
-                  font-weight: bold;
-                  color: #2c3e50;
-                  border-bottom: 1px solid #ddd;
+                  background: #f3f4f6;
+                  padding: 14px 16px;
+                  font-weight: 700;
+                  color: #111827;
+                  border-bottom: 1px solid #e5e7eb;
               }
               
               .section-content {
-                  padding: 15px;
+                  padding: 16px;
               }
               
-              .grid-3 {
-                  display: grid;
-                  grid-template-columns: repeat(3, 1fr);
-                  gap: 10px;
+              table {
+                  width: 100%;
+                  border-collapse: separate;
+                  border-spacing: 0;
+                  border: 1px solid #e5e7eb;
+                  border-radius: 12px;
+                  overflow: hidden;
               }
-              
-              .grid-2 {
-                  display: grid;
-                  grid-template-columns: repeat(2, 1fr);
-                  gap: 10px;
+
+              th, td {
+                  padding: 12px 14px;
+                  text-align: center;
+                  border-bottom: 1px solid #eef2f7;
+              }
+
+              th {
+                  background: #f9fafb;
+                  font-weight: 700;
+                  color: #1f2937;
+              }
+
+              tr:last-child td {
+                  border-bottom: none;
               }
               
               .result-section {
-                  background: ${isPositive ? '#d4edda' : '#f8d7da'};
-                  border: 2px solid ${isPositive ? '#c3e6cb' : '#f5c6cb'};
+                  background: ${
+                    isPositive ? "#d4edda" : isNegative ? "#f8d7da" : "#f1f2f6"
+                  };
+                  border: 2px solid ${
+                    isPositive ? "#c3e6cb" : isNegative ? "#f5c6cb" : "#ddd"
+                  };
                   border-radius: 8px;
-                  padding: 15px;
+                  padding: 16px;
                   margin: 20px 0;
               }
               
               .result-title {
                   font-size: 1.2rem;
                   font-weight: bold;
-                  color: ${isPositive ? '#155724' : '#721c24'};
-                  margin-bottom: 10px;
+                  color: ${
+                    isPositive ? "#155724" : isNegative ? "#721c24" : "#2c3e50"
+                  };
+                  margin-bottom: 12px;
                   text-align: center;
               }
               
               .result-details {
                   display: grid;
                   grid-template-columns: 1fr 1fr;
-                  gap: 10px;
+                  gap: 12px;
               }
               
               .result-item {
                   display: flex;
                   justify-content: space-between;
-                  padding: 5px 0;
+                  padding: 6px 0;
               }
               
               .final-result {
                   text-align: center;
                   font-size: 1.3rem;
                   font-weight: bold;
-                  color: ${isPositive ? '#155724' : '#721c24'};
+                  color: ${
+                    isPositive ? "#155724" : isNegative ? "#721c24" : "#2c3e50"
+                  };
                   margin-top: 15px;
-                  padding: 10px;
-                  border-top: 2px solid ${isPositive ? '#c3e6cb' : '#f5c6cb'};
+                  padding: 12px;
+                  border-top: 2px solid ${
+                    isPositive ? "#c3e6cb" : isNegative ? "#f5c6cb" : "#ddd"
+                  };
               }
+              .status-row {
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  gap: 12px;
+                  margin-top: 10px;
+              }
+              .badge {
+                  display: inline-block;
+                  padding: 6px 10px;
+                  border-radius: 9999px;
+                  font-weight: 700;
+                  font-size: 0.9rem;
+                  border: 1px solid transparent;
+              }
+              .badge-green { background: #e8f5e9; color: #1b5e20; border-color: #c8e6c9; }
+              .badge-red { background: #ffebee; color: #b71c1c; border-color: #ffcdd2; }
+              .badge-gray { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
               
               .footer {
-                  background: #f8f9fa;
+                  background: #f9fafb;
                   text-align: center;
-                  padding: 15px;
-                  color: #666;
+                  padding: 16px;
+                  color: #6b7280;
                   font-size: 0.9rem;
-                  border-top: 1px solid #ddd;
+                  border-top: 1px solid #e5e7eb;
               }
               
               @media print {
@@ -196,9 +250,11 @@ const PrintShiftClosureModal = ({ open, onOpenChange, closure }: PrintShiftClosu
           <div class="container">
               <div class="header">
                   <div class="logo">☕ مقهى موريسكو</div>
-                  <div class="report-title">تقرير إغلاق الوردية</div>
+                  <div class="report-title">فاتورة إغلاق الوردية · 2026</div>
                   <div class="report-info">
-                      وردية ${closure.shift_type === 'morning' ? 'صباحية' : 'مسائية'} - ${formatDate(closure.shift_date)}
+                      وردية ${
+                        closure.shift_type === "morning" ? "صباحية" : "مسائية"
+                      } - ${formatDate(closure.shift_date)}
                   </div>
               </div>
               
@@ -206,83 +262,129 @@ const PrintShiftClosureModal = ({ open, onOpenChange, closure }: PrintShiftClosu
                   <div class="info-grid">
                       <div class="info-item">
                           <span class="info-label">نوع الوردية:</span>
-                          <span class="info-value">${closure.shift_type === 'morning' ? 'صباحية' : 'مسائية'}</span>
+                          <span class="info-value">${
+                            closure.shift_type === "morning"
+                              ? "صباحية"
+                              : "مسائية"
+                          }</span>
                       </div>
                       <div class="info-item">
                           <span class="info-label">التاريخ:</span>
-                          <span class="info-value">${formatDate(closure.shift_date)}</span>
+                          <span class="info-value">${formatDate(
+                            closure.shift_date
+                          )}</span>
                       </div>
                   </div>
                   
                   <div class="section">
-                      <div class="section-header">النقود الحالية</div>
+                      <div class="section-header">ملخص القيم</div>
                       <div class="section-content">
-                          <div class="grid-3">
-                              <div class="info-item">
-                                  <span class="info-label">نحاس (فكة):</span>
-                                  <span class="info-value">${formatCurrency(closure.coins_small)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">رقاق (1 دينار):</span>
-                                  <span class="info-value">${formatCurrency(closure.coins_one_dinar)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">غلاض (باقي العملات):</span>
-                                  <span class="info-value">${formatCurrency(closure.bills_large)}</span>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  
-                  <div class="section">
-                      <div class="section-header">المبيعات</div>
-                      <div class="section-content">
-                          <div class="grid-2">
-                              <div class="info-item">
-                                  <span class="info-label">مبيعات الشاشة:</span>
-                                  <span class="info-value">${formatCurrency(closure.screen_sales)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">الكاش:</span>
-                                  <span class="info-value">${formatCurrency(closure.cash_sales)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">البطاقة المصرفية:</span>
-                                  <span class="info-value">${formatCurrency(closure.card_sales)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">بطاقة تداول:</span>
-                                  <span class="info-value">${formatCurrency(closure.tadawul_sales)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">بريستو:</span>
-                                  <span class="info-value">${formatCurrency(closure.presto_sales)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">مصروفات الوردية:</span>
-                                  <span class="info-value">${formatCurrency(closure.shift_expenses)}</span>
-                              </div>
-                          </div>
+                          <table>
+                              <thead>
+                                  <tr>
+                                      <th>البند</th>
+                                      <th>المبلغ</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  <tr>
+                                      <td>نحاس (فكة)</td>
+                                      <td>${formatCurrency(
+                                        closure.coins_small
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>رقاق (1 دينار)</td>
+                                      <td>${formatCurrency(
+                                        closure.coins_one_dinar
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>غلاض (باقي العملات)</td>
+                                      <td>${formatCurrency(
+                                        closure.bills_large
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>الكاش</td>
+                                      <td>${formatCurrency(
+                                        closure.cash_sales
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>البطاقة المصرفية</td>
+                                      <td>${formatCurrency(
+                                        closure.card_sales
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>بطاقة تداول</td>
+                                      <td>${formatCurrency(
+                                        closure.tadawul_sales
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>بريستو</td>
+                                      <td>${formatCurrency(
+                                        closure.presto_sales
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>مصروفات الوردية</td>
+                                      <td>${formatCurrency(
+                                        closure.shift_expenses
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>نحاس/رقاق/غلاض سابقة (مطروح)</td>
+                                      <td>- ${formatCurrency(
+                                        closure.prev_coins_small +
+                                          closure.prev_coins_one_dinar +
+                                          closure.prev_bills_large
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>مبيعات الشاشة (مطروح لاحقًا)</td>
+                                      <td>- ${formatCurrency(
+                                        closure.screen_sales
+                                      )}</td>
+                                  </tr>
+                              </tbody>
+                          </table>
                       </div>
                   </div>
                   
                   <div class="section">
                       <div class="section-header">النقود من الوردية السابقة</div>
                       <div class="section-content">
-                          <div class="grid-3">
-                              <div class="info-item">
-                                  <span class="info-label">نحاس سابق:</span>
-                                  <span class="info-value">${formatCurrency(closure.prev_coins_small)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">رقاق سابق:</span>
-                                  <span class="info-value">${formatCurrency(closure.prev_coins_one_dinar)}</span>
-                              </div>
-                              <div class="info-item">
-                                  <span class="info-label">غلاض سابق:</span>
-                                  <span class="info-value">${formatCurrency(closure.prev_bills_large)}</span>
-                              </div>
-                          </div>
+                          <table>
+                              <thead>
+                                  <tr>
+                                      <th>البند</th>
+                                      <th>المبلغ</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  <tr>
+                                      <td>نحاس سابق</td>
+                                      <td>${formatCurrency(
+                                        closure.prev_coins_small
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>رقاق سابق</td>
+                                      <td>${formatCurrency(
+                                        closure.prev_coins_one_dinar
+                                      )}</td>
+                                  </tr>
+                                  <tr>
+                                      <td>غلاض سابق</td>
+                                      <td>${formatCurrency(
+                                        closure.prev_bills_large
+                                      )}</td>
+                                  </tr>
+                              </tbody>
+                          </table>
                       </div>
                   </div>
                   
@@ -290,22 +392,54 @@ const PrintShiftClosureModal = ({ open, onOpenChange, closure }: PrintShiftClosu
                       <div class="result-title">نتائج إغلاق الوردية</div>
                       <div class="result-details">
                           <div class="result-item">
-                              <span>إجمالي النقود الحالية:</span>
-                              <span>${formatCurrency(closure.total_actual)}</span>
+                              <span>المجموع قبل طرح مبيعات الشاشة:</span>
+                              <span>${formatCurrency(
+                                closure.total_calculated
+                              )}</span>
                           </div>
                           <div class="result-item">
-                              <span>المجموع المحسوب:</span>
-                              <span>${formatCurrency(closure.total_calculated)}</span>
+                              <span>النهائي بعد طرح مبيعات الشاشة:</span>
+                              <span>${formatCurrency(closure.difference)}</span>
                           </div>
                       </div>
                       <div class="final-result">
-                          النتيجة: ${isPositive ? 'فائض' : 'عجز'} ${formatCurrency(Math.abs(closure.difference))}
+                          ${Math.round(closure.total_calculated)}/${Math.abs(
+      Math.round(closure.difference)
+    )}${unit}
+                      </div>
+                      <div class="status-row">
+                          <span class="badge ${
+                            isPositive
+                              ? "badge-green"
+                              : isNegative
+                              ? "badge-red"
+                              : "badge-gray"
+                          }">
+                              ${
+                                isPositive
+                                  ? "فائض"
+                                  : isNegative
+                                  ? "عجز"
+                                  : "متوازن"
+                              }
+                          </span>
+                          <span>
+                              قيمة ${
+                                isPositive
+                                  ? "الفائض"
+                                  : isNegative
+                                  ? "العجز"
+                                  : "النتيجة"
+                              }: ${formatCurrency(Math.abs(closure.difference))}
+                          </span>
                       </div>
                   </div>
               </div>
               
               <div class="footer">
-                  تم إنشاء هذا التقرير في ${formatDate(new Date().toISOString().split('T')[0])} - مقهى موريسكو
+                  تم إنشاء هذا التقرير في ${formatDate(
+                    new Date().toISOString().split("T")[0]
+                  )} - مقهى موريسكو
               </div>
           </div>
           
@@ -333,35 +467,50 @@ const PrintShiftClosureModal = ({ open, onOpenChange, closure }: PrintShiftClosu
             طباعة تقرير إغلاق الوردية
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-800 mb-2">معلومات التقرير</h3>
+            <h3 className="font-semibold text-blue-800 mb-2">
+              معلومات التقرير
+            </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>نوع الوردية:</span>
-                <span className="font-medium">{closure.shift_type === 'morning' ? 'صباحية' : 'مسائية'}</span>
+                <span className="font-medium">
+                  {closure.shift_type === "morning" ? "صباحية" : "مسائية"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>التاريخ:</span>
-                <span className="font-medium">{formatDate(closure.shift_date)}</span>
+                <span className="font-medium">
+                  {formatDate(closure.shift_date)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>النتيجة:</span>
-                <span className={`font-bold ${closure.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {closure.difference >= 0 ? 'فائض' : 'عجز'} {formatCurrency(Math.abs(closure.difference))}
+                <span
+                  className={`font-bold ${
+                    closure.difference >= 0 ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {closure.difference >= 0 ? "فائض" : "عجز"}{" "}
+                  {formatCurrency(Math.abs(closure.difference))}
                 </span>
               </div>
             </div>
           </div>
-          
+
           <p className="text-muted-foreground text-sm">
             سيتم فتح نافذة جديدة لطباعة التقرير مع جميع التفاصيل والنتائج.
           </p>
         </div>
 
         <div className="flex gap-3 pt-4">
-          <Button onClick={() => onOpenChange(false)} variant="outline" className="flex-1">
+          <Button
+            onClick={() => onOpenChange(false)}
+            variant="outline"
+            className="flex-1"
+          >
             <X className="w-4 h-4 ml-2" />
             إلغاء
           </Button>

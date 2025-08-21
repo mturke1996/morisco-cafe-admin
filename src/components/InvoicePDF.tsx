@@ -125,7 +125,7 @@ const InvoicePDF = ({ invoice, customer, onClose }: InvoicePDFProps) => {
                 <p><strong>رقم الفاتورة:</strong> ${invoice.invoice_number}</p>
                 <p><strong>تاريخ الفاتورة:</strong> ${new Date(
                   invoice.invoice_date
-                ).toLocaleDateString("ar-LY")}</p>
+                ).toLocaleDateString("en-GB")}</p>
                 <p><strong>حالة الدفع:</strong> <span class="accent">معلقة</span></p>
               </div>
             </div>
@@ -172,7 +172,7 @@ const InvoicePDF = ({ invoice, customer, onClose }: InvoicePDFProps) => {
           </div>
 
           <div class="footer">تم إنشاء هذه الفاتورة في ${new Date().toLocaleDateString(
-            "ar-LY"
+            "en-GB"
           )} - ${brand.companyName}</div>
         </div>
 
@@ -252,7 +252,7 @@ const InvoicePDF = ({ invoice, customer, onClose }: InvoicePDFProps) => {
                   </p>
                   <p>
                     <strong>التاريخ:</strong>{" "}
-                    {new Date(invoice.invoice_date).toLocaleDateString("ar-SA")}
+                    {new Date(invoice.invoice_date).toLocaleDateString("en-GB")}
                   </p>
                   <p>
                     <strong>حالة الدفع:</strong>{" "}
@@ -346,7 +346,7 @@ const InvoicePDF = ({ invoice, customer, onClose }: InvoicePDFProps) => {
               <p>شكراً لتعاملكم معنا</p>
               <p className="mt-2">
                 تم إنشاء هذه الفاتورة بتاريخ{" "}
-                {new Date().toLocaleDateString("ar-SA")}
+                {new Date().toLocaleDateString("en-GB")}
               </p>
             </div>
           </div>

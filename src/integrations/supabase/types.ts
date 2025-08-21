@@ -745,6 +745,45 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_closure_expenses: {
+        Row: {
+          id: string
+          shift_closure_id: string
+          title: string
+          description: string | null
+          amount: number
+          category: string | null
+          date: string
+          receipt_url: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          shift_closure_id: string
+          title: string
+          description?: string | null
+          amount: number
+          category?: string | null
+          date: string
+          receipt_url?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          shift_closure_id?: string
+          title?: string
+          description?: string | null
+          amount?: number
+          category?: string | null
+          date?: string
+          receipt_url?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

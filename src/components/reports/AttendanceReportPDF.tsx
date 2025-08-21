@@ -113,7 +113,7 @@ export const generateAttendanceReportPDF = ({
             <div class="logo"><img src="${brand.logoUrl}" onerror="this.style.display='none'"/></div>
             <div class="company">${brand.companyName}</div>
           </div>
-          <div class="title">تقرير الحضور والانصراف<br/><small style="font-weight:400;font-size:14px;opacity:.9">${new Date(config.startDate).toLocaleDateString("ar-LY")} - ${new Date(config.endDate).toLocaleDateString("ar-LY")}</small></div>
+          <div class="title">تقرير الحضور والانصراف<br/><small style="font-weight:400;font-size:14px;opacity:.9">${new Date(config.startDate).toLocaleDateString("en-GB")} - ${new Date(config.endDate).toLocaleDateString("en-GB")}</small></div>
         </div>
 
         <div class="body">
@@ -139,7 +139,7 @@ export const generateAttendanceReportPDF = ({
             <tbody>
               ${filteredData.map((record) => {
                 const key = new Date(record.date).toISOString().split("T")[0];
-                const d = new Date(record.date).toLocaleDateString("ar-LY");
+                const d = new Date(record.date).toLocaleDateString("en-GB");
                 const inT = record.check_in ? new Date(record.check_in).toLocaleTimeString("ar-LY") : "-";
                 const outT = record.check_out ? new Date(record.check_out).toLocaleTimeString("ar-LY") : "-";
                 const name = record.employee_name || record.employees?.name || "غير محدد";
@@ -157,7 +157,7 @@ export const generateAttendanceReportPDF = ({
             <div class="sum"><div class="label">الصافي</div><div class="value">${currency(totalWages - totalWithdrawals)}</div></div>
           </div>
 
-          <div class="footer">تم إنشاء هذا التقرير في ${new Date().toLocaleDateString("ar-LY")} - ${brand.companyName}</div>
+          <div class="footer">تم إنشاء هذا التقرير في ${new Date().toLocaleDateString("en-GB")} - ${brand.companyName}</div>
         </div>
       </div>
       <script>window.onload=function(){setTimeout(()=>{window.print();window.close();},300);}</script>

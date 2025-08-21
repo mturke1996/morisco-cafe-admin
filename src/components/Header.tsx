@@ -31,7 +31,7 @@ const Header = () => {
         day: 'numeric',
         weekday: 'long'
       };
-      setCurrentDate(now.toLocaleDateString('ar-SA', options));
+      setCurrentDate(now.toLocaleDateString('en-GB', options));
     };
 
     updateDate();

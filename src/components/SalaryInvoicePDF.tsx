@@ -252,9 +252,9 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
                 📅 تفاصيل الفترة
               </div>
               <div class="meta-content">
-                <p><strong>تاريخ الدفع:</strong> ${new Date(paymentData.payment_date).toLocaleDateString('ar-LY')}</p>
-                <p><strong>من:</strong> ${new Date(paymentData.period_start).toLocaleDateString('ar-LY')}</p>
-                <p><strong>إلى:</strong> ${new Date(paymentData.period_end).toLocaleDateString('ar-LY')}</p>
+                <p><strong>تاريخ الدفع:</strong> ${new Date(paymentData.payment_date).toLocaleDateString('en-GB')}</p>
+                <p><strong>من:</strong> ${new Date(paymentData.period_start).toLocaleDateString('en-GB')}</p>
+                <p><strong>إلى:</strong> ${new Date(paymentData.period_end).toLocaleDateString('en-GB')}</p>
                 <p><strong>أيام العمل:</strong> ${paymentData.days_worked} يوم</p>
                 <p><strong>اليومية:</strong> ${paymentData.daily_wage.toFixed(2)} د.ل</p>
               </div>
@@ -323,7 +323,7 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
         
         <div class="invoice-footer">
           <div class="footer-note">
-            تم إنشاء هذه الفاتورة آلياً في ${new Date().toLocaleDateString('ar-LY')} الساعة ${new Date().toLocaleTimeString('ar-LY')}
+            تم إنشاء هذه الفاتورة آلياً في ${new Date().toLocaleDateString('en-GB')} الساعة ${new Date().toLocaleTimeString('en-GB')}
           </div>
           <div class="footer-signature">${brand.companyName} - إدارة الموارد البشرية</div>
         </div>

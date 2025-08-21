@@ -64,21 +64,26 @@ const ShiftClosureModal = ({ open, onOpenChange, onSave, initialDate }: ShiftClo
     const currentCash = shiftData.coins_small + shiftData.coins_one_dinar + shiftData.bills_large;
     const totalSales = shiftData.cash_sales + shiftData.card_sales + shiftData.tadawul_sales + shiftData.presto_sales;
     const prevCash = shiftData.prev_coins_small + shiftData.prev_coins_one_dinar + shiftData.prev_bills_large;
-    const calculatedTotal = prevCash + totalSales - shiftData.shift_expenses;
-    const difference = currentCash - calculatedTotal;
-    
+    // المجموع قبل طرح مبيعات الشاشة حسب المطلوب:
+    // نحاس + رقاق + غلاض + الكاش + البطاقة + تداول + المصروفات + بريستو - (نحاس/رقاق/غلاض السابقة)
+    const totalBeforeScreen = currentCash + totalSales + shiftData.shift_expenses - prevCash;
+    // المجموع النهائي بعد طرح مبيعات الشاشة
+    const finalAfterScreen = totalBeforeScreen - shiftData.screen_sales;
+
     return {
       currentCash,
       totalSales,
       prevCash,
-      calculatedTotal,
-      difference,
+      totalBeforeScreen,
+      finalAfterScreen,
       screenSales: shiftData.screen_sales
     };
   };
 
   const totals = calculateTotals();
-  const isPositive = totals.difference >= 0;
+  const isPositive = totals.finalAfterScreen > 0;
+  const isNegative = totals.finalAfterScreen < 0;
+  const combinedDisplay = `${totals.totalBeforeScreen.toFixed(0)}/${Math.abs(totals.finalAfterScreen).toFixed(0)} د.ل`;
 
   const handleSave = () => {
     onSave(shiftData);
@@ -277,14 +282,22 @@ const ShiftClosureModal = ({ open, onOpenChange, onSave, initialDate }: ShiftClo
                   <span className="font-bold">{totals.screenSales.toFixed(2)} د.ل</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>المجموع المحسوب:</span>
-                  <span className="font-bold">{totals.calculatedTotal.toFixed(2)} د.ل</span>
+                  <span>المجموع قبل طرح مبيعات الشاشة:</span>
+                  <span className="font-bold">{totals.totalBeforeScreen.toFixed(2)} د.ل</span>
                 </div>
                 <hr className="my-2" />
                 <div className="flex justify-between items-center">
                   <span>النتيجة:</span>
-                  <span className={`font-bold text-lg ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                    {totals.calculatedTotal.toFixed(2)} / {isPositive ? 'فائض' : 'عجز'} {Math.abs(totals.difference).toFixed(2)} د.ل
+                  <span className={`font-bold text-lg ${isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-black'}`}>
+                    {combinedDisplay}
+                  </span>
+                </div>
+                <div className={`flex justify-between items-center p-2 rounded ${
+                  isPositive ? 'bg-green-50' : isNegative ? 'bg-red-50' : 'bg-gray-50'
+                }`}>
+                  <span>الفائض/العجز:</span>
+                  <span className={`font-bold ${isPositive ? 'text-green-700' : isNegative ? 'text-red-700' : 'text-gray-700'}`}>
+                    {isPositive ? 'فائض' : isNegative ? 'عجز' : 'متوازن'} / {Math.abs(totals.finalAfterScreen).toFixed(2)} د.ل
                   </span>
                 </div>
               </div>

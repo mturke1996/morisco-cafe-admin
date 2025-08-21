@@ -90,7 +90,7 @@ const ExpensesList = ({ expenses, onAddExpense }: ExpensesListProps) => {
                     </div>
                     <p className="text-muted-foreground mb-2 text-sm">{expense.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(expense.expense_date).toLocaleDateString('ar-SA')}
+                      {new Date(expense.expense_date).toLocaleDateString('en-GB')}
                     </p>
                   </div>
                 </div>
