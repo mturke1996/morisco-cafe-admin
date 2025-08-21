@@ -388,7 +388,7 @@ const Attendance = () => {
           اختر الموظف لتسجيل حضوره اليوم وحساب يوميته
         </DialogDescription>
       </DialogHeader>
-      <ScrollArea className="max-h-[70vh] overflow-y-auto">
+      <ScrollArea className="max-h-96 overflow-y-auto">
         <div className="space-y-3">
           {employees.map((employee) => {
             const hasAttendance = attendanceRecords.some(
