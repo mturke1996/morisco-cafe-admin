@@ -54,11 +54,15 @@ const ShiftClosureModal = ({ open, onOpenChange, onSave, initialDate }: ShiftClo
   }, [initialDate, open]);
 
   const handleInputChange = (field: keyof typeof shiftData, value: string | number) => {
-    setShiftData(prev => ({
-      ...prev,
-      [field]: typeof value === 'string' ? parseFloat(value) || 0 : value
-    }));
-  };
+  setShiftData(prev => {
+    // لو الحقل هو نوع الوردية أو التاريخ، خليه نص زي ما هو
+    if (field === "shift_type" || field === "shift_date") {
+      return { ...prev, [field]: value as string };
+    }
+    // باقي الحقول رقمية
+    return { ...prev, [field]: typeof value === "string" ? parseFloat(value) || 0 : value };
+  });
+};
 
   const calculateTotals = () => {
     const currentCash = shiftData.coins_small + shiftData.coins_one_dinar + shiftData.bills_large;
