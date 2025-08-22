@@ -34,15 +34,26 @@ const getShiftTypeText = (type: string) => {
 
 const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
   const [showExpensesModal, setShowExpensesModal] = useState(false);
-  const isPositive = closure.difference > 0;
-  const isNegative = closure.difference < 0;
-  const combinedDisplay = `${closure.total_calculated.toFixed(0)}/${Math.abs(
-    closure.difference
-  ).toFixed(0)} د.ل`;
 
   const hasExpenses =
     Array.isArray((closure as any).shift_closure_expenses) &&
     (closure as any).shift_closure_expenses.length > 0;
+
+  // حساب المبيعات والفرق
+  const screenSales =
+    closure.cash_sales +
+    closure.card_sales +
+    closure.tadawul_sales +
+    closure.presto_sales;
+
+  const difference = closure.total_calculated - screenSales;
+  const isPositive = difference > 0;
+  const isNegative = difference < 0;
+  const differenceText = isPositive
+    ? "فائض"
+    : isNegative
+    ? "عجز"
+    : "";
 
   return (
     <>
@@ -70,12 +81,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
                 <span className="text-xs text-green-700">إجمالي المبيعات</span>
               </div>
               <p className="text-lg font-bold text-green-700">
-                {formatCurrency(
-                  closure.cash_sales +
-                    closure.card_sales +
-                    closure.tadawul_sales +
-                    closure.presto_sales
-                )}
+                {formatCurrency(screenSales)}
               </p>
             </div>
 
@@ -104,10 +110,8 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-sm">المجموع الفعلي</span>
-              <span className="font-semibold">
-                {formatCurrency(closure.total_actual)}
-              </span>
+              <span className="text-sm">مبيعات الشاشة</span>
+              <span className="font-semibold">{formatCurrency(screenSales)}</span>
             </div>
 
             <hr className="my-2" />
@@ -129,8 +133,8 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
                       : "text-gray-600"
                   }`}
                 >
-                  {isPositive ? "+" : ""}
-                  {formatCurrency(closure.difference)}
+                  {isPositive ? "+" : isNegative ? "-" : ""}
+                  {formatCurrency(Math.abs(difference))} {differenceText}
                 </span>
               </div>
             </div>
