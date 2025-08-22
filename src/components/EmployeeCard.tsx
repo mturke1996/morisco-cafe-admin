@@ -270,6 +270,7 @@ export const EmployeeCard = ({ employee }: EmployeeCardProps) => {
             <User className="w-4 h-4 ml-2" />
             عرض التفاصيل
           </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -277,6 +278,15 @@ export const EmployeeCard = ({ employee }: EmployeeCardProps) => {
           >
             <Clock className="w-4 h-4" />
             الحضور
+          </Button>
+
+          {/* زر تعديل بيانات الموظف */}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => navigate(`/employees/${employee.id}/edit`)}
+          >
+            ✏️ تعديل
           </Button>
         </div>
       </CardContent>
