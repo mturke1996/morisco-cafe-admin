@@ -20,7 +20,7 @@ interface ShiftClosureCardProps {
   onPrint: (closure: ShiftClosureData) => void;
 }
 
-const formatCurrency = (amount: number) => `${amount.toFixed(2)} د.ل`;
+const formatCurrency = (amount: number) => `${amount.toFixed(2)} د.ل`; 
 
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("ar-LY");
 
