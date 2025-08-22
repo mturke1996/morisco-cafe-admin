@@ -33,13 +33,13 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
     Array.isArray((closure as any).shift_closure_expenses) &&
     (closure as any).shift_closure_expenses.length > 0;
 
-  // 1️⃣ النقد المتوفر = كاش + بطاقة مصرفية + بطاقة تداول
+  // النقد المتوفر = كاش + بطاقة مصرفية + بطاقة تداول
   const availableCash = closure.cash_sales + closure.card_sales + closure.tadawul_sales;
 
-  // 2️⃣ إجمالي المبيعات = مبيعات الشاشة فقط
+  // إجمالي المبيعات = مبيعات الشاشة فقط
   const totalSales = closure.screen_sales;
 
-  // 3️⃣ المجموع المحسوب = نحاس + رقاق + غلاض + كاش + بطاقة مصرفية + بطاقة تداول + المصروفات + بريستو - الورديه السابقة
+  // المجموع المحسوب = نحاس + رقاق + غلاض + كاش + بطاقة مصرفية + بطاقة تداول + المصروفات + بريستو - الورديه السابقة
   const totalCalculated =
     closure.coins_small +
     closure.coins_one_dinar +
@@ -51,7 +51,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
     closure.shift_expenses -
     (closure.prev_coins_small + closure.prev_coins_one_dinar + closure.prev_bills_large);
 
-  // 4️⃣ الفرق = المجموع المحسوب - مبيعات الشاشة
+  // الفرق = المجموع المحسوب - مبيعات الشاشة
   const difference = totalCalculated - closure.screen_sales;
   const isPositive = difference > 0;
   const isNegative = difference < 0;
@@ -111,7 +111,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
                   isPositive ? "text-green-600" : isNegative ? "text-red-600" : "text-gray-600"
                 }`}
               >
-                {formatCurrency(Math.abs(difference))} {differenceText}
+                {formatCurrency(Math.abs(difference))} د.ل ({differenceText})
               </span>
             </div>
           </div>
