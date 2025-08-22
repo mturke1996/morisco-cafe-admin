@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -25,16 +24,16 @@ const App = () => {
   useEffect(() => {
     const setVhProperty = () => {
       const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
     };
 
     setVhProperty();
-    window.addEventListener('resize', setVhProperty);
-    window.addEventListener('orientationchange', setVhProperty);
+    window.addEventListener("resize", setVhProperty);
+    window.addEventListener("orientationchange", setVhProperty);
 
     return () => {
-      window.removeEventListener('resize', setVhProperty);
-      window.removeEventListener('orientationchange', setVhProperty);
+      window.removeEventListener("resize", setVhProperty);
+      window.removeEventListener("orientationchange", setVhProperty);
     };
   }, []);
 
@@ -46,22 +45,88 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Login />} />
-              <Route path="/*" element={
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                    <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
-                    <Route path="/employee-profile/:employeeId" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
-                    <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
-                    <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-                    <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                    <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
-                    <Route path="/customer/:customerId" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Layout>
-              } />
+              <Route
+                path="/*"
+                element={
+                  <Layout>
+                    <Routes>
+                      <Route
+                        path="/"
+                        element={
+                          <ProtectedRoute>
+                            <Index />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/employees"
+                        element={
+                          <ProtectedRoute>
+                            <Employees />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/employees/:employeeId"
+                        element={
+                          <ProtectedRoute>
+                            <EmployeeProfile />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/attendance"
+                        element={
+                          <ProtectedRoute>
+                            <Attendance />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/expenses"
+                        element={
+                          <ProtectedRoute>
+                            <Expenses />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/reports"
+                        element={
+                          <ProtectedRoute>
+                            <Reports />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/settings"
+                        element={
+                          <ProtectedRoute>
+                            <Settings />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/customers"
+                        element={
+                          <ProtectedRoute>
+                            <Customers />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/customer/:customerId"
+                        element={
+                          <ProtectedRoute>
+                            <CustomerProfile />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Layout>
+                }
+              />
             </Routes>
           </BrowserRouter>
         </AuthProvider>

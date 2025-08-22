@@ -1,12 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, Calendar, Calculator, FileText } from "lucide-react";
+import { DollarSign, Calendar, Calculator, FileText, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { generateSalaryInvoicePDF } from "./SalaryInvoicePDF";
@@ -15,55 +15,67 @@ interface Employee {
   id: string;
   name: string;
   position: string;
-  email: string;
-  phone: string;
 }
 
 interface AttendanceStats {
+  total_days: number;
   present_days: number;
+  absent_days: number;
   total_earnings: number;
   total_deductions: number;
   total_bonuses: number;
 }
 
+interface WithdrawalRecord {
+  id: string;
+  employee_id: string;
+  amount: number;
+  withdrawal_date: string;
+  notes: string | null;
+  created_at: string;
+}
+
 interface SalaryPaymentModalProps {
   employee: Employee;
-  attendanceStats: AttendanceStats;
-  dailyWage: number;
   isOpen: boolean;
   onClose: () => void;
   onPaymentComplete: () => void;
+  currentBalance: number;
+  attendanceStats: AttendanceStats;
+  dailyWage: number;
+  withdrawals: WithdrawalRecord[];
 }
 
 export const SalaryPaymentModal = ({
   employee,
-  attendanceStats,
-  dailyWage,
   isOpen,
   onClose,
   onPaymentComplete,
+  currentBalance,
+  attendanceStats,
+  dailyWage,
+  withdrawals,
 }: SalaryPaymentModalProps) => {
   const [amountPaid, setAmountPaid] = useState("");
   const [notes, setNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  // إصلاح حساب المرتب - يجب ضرب عدد الأيام في اليومية
-  const calculatedGrossAmount = attendanceStats.present_days * dailyWage;
-  const netAmount = calculatedGrossAmount + attendanceStats.total_bonuses - attendanceStats.total_deductions;
-  const remainingBalance = Math.max(0, netAmount - parseFloat(amountPaid || "0"));
+  // حساب الإجماليات
+  const calculatedEarnings = attendanceStats.present_days * dailyWage;
+  const netEarnings = calculatedEarnings + attendanceStats.total_bonuses - attendanceStats.total_deductions;
+  const totalWithdrawals = withdrawals.reduce((sum, withdrawal) => sum + withdrawal.amount, 0);
+  const remainingBalance = currentBalance - parseFloat(amountPaid || "0");
 
-  console.log('Salary calculation:', {
-    present_days: attendanceStats.present_days,
-    dailyWage: dailyWage,
-    calculatedGrossAmount: calculatedGrossAmount,
-    total_bonuses: attendanceStats.total_bonuses,
-    total_deductions: attendanceStats.total_deductions,
-    netAmount: netAmount
-  });
+  // تحديد فترة الدفع (الشهر الحالي)
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const periodStart = new Date(currentYear, currentMonth, 1);
+  const periodEnd = new Date(currentYear, currentMonth + 1, 0);
 
   const handleFullPayment = () => {
-    setAmountPaid(netAmount.toString());
+    setAmountPaid(currentBalance.toString());
   };
 
   const handlePayment = async () => {
@@ -76,29 +88,26 @@ export const SalaryPaymentModal = ({
       return;
     }
 
+    const paymentAmount = parseFloat(amountPaid);
+    if (paymentAmount > currentBalance) {
+      toast({
+        title: "خطأ",
+        description: "المبلغ المطلوب أكبر من الرصيد المتاح",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const currentMonth = new Date();
-      const periodStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-      const periodEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-
       const paymentData = {
         employee_id: employee.id,
-        days_worked: attendanceStats.present_days,
-        daily_wage: dailyWage,
-        gross_amount: calculatedGrossAmount, // استخدام القيمة المحسوبة الصحيحة
-        total_bonuses: attendanceStats.total_bonuses,
-        total_deductions: attendanceStats.total_deductions,
-        net_amount: netAmount,
-        amount_paid: parseFloat(amountPaid),
-        remaining_balance: remainingBalance,
-        payment_status: remainingBalance > 0 ? 'partial' : 'full',
-        notes: notes || null,
+        amount_paid: paymentAmount,
+        payment_date: new Date().toISOString().split('T')[0],
         period_start: periodStart.toISOString().split('T')[0],
         period_end: periodEnd.toISOString().split('T')[0],
+        notes: notes || null,
       };
-
-      console.log('Payment data to insert:', paymentData);
 
       const { data, error } = await supabase
         .from('salary_payments')
@@ -107,6 +116,26 @@ export const SalaryPaymentModal = ({
         .single();
 
       if (error) throw error;
+
+      // إذا كان الدفع كاملاً، قم بتصفير المسحوبات لهذا الشهر
+      if (remainingBalance === 0) {
+        const firstDayStr = periodStart.toISOString().split('T')[0];
+        const nextMonthStr = new Date(currentYear, currentMonth + 1, 1).toISOString().split('T')[0];
+        
+        // حذف جميع المسحوبات لهذا الشهر
+        const { error: withdrawalError } = await supabase
+          .from('employee_withdrawals')
+          .delete()
+          .eq('employee_id', employee.id)
+          .gte('withdrawal_date', firstDayStr)
+          .lt('withdrawal_date', nextMonthStr);
+
+        if (withdrawalError) {
+          console.error('Error clearing withdrawals:', withdrawalError);
+        } else {
+          console.log('Successfully cleared withdrawals for full payment');
+        }
+      }
 
       // Generate and download PDF invoice
       await generateSalaryInvoicePDF({
@@ -119,16 +148,20 @@ export const SalaryPaymentModal = ({
 
       toast({
         title: "تم الدفع بنجاح",
-        description: "تم تسجيل دفع المرتب وإنشاء الفاتورة",
+        description: remainingBalance === 0 
+          ? "تم تسجيل دفع المرتب كاملاً وتصفير المسحوبات" 
+          : "تم تسجيل دفع المرتب وإنشاء الفاتورة",
       });
 
       onPaymentComplete();
       onClose();
+      setAmountPaid("");
+      setNotes("");
     } catch (error) {
-      console.error('خطأ في دفع المرتب:', error);
+      console.error('خطأ في تسجيل الدفع:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تسجيل دفع المرتب",
+        description: "فشل في تسجيل الدفع",
         variant: "destructive"
       });
     } finally {
@@ -140,7 +173,7 @@ export const SalaryPaymentModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md mx-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-xl text-center">دفع مرتب الموظف</DialogTitle>
+          <DialogTitle className="text-xl text-center">دفع راتب الموظف</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -154,59 +187,76 @@ export const SalaryPaymentModal = ({
             </CardContent>
           </Card>
 
-          {/* Salary Summary */}
-          <div className="grid grid-cols-2 gap-3">
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">أيام العمل</p>
-                    <p className="font-bold">{attendanceStats.present_days}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2">
-                  <Calculator className="w-4 h-4 text-green-600" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">اليومية</p>
-                    <p className="font-bold">{dailyWage.toFixed(2)} د.ل</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Payment Details */}
+          {/* Financial Summary */}
           <Card>
             <CardContent className="p-4 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">إجمالي اليوميات ({attendanceStats.present_days} × {dailyWage.toFixed(2)})</span>
-                <span className="font-medium text-green-600">+{calculatedGrossAmount.toFixed(2)} د.ل</span>
+              <div className="text-center mb-3">
+                <h4 className="font-semibold text-sm text-muted-foreground mb-2">الملخص المالي</h4>
               </div>
               
-              {attendanceStats.total_bonuses > 0 && (
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">المكافآت</span>
-                  <span className="font-medium text-green-600">+{attendanceStats.total_bonuses.toFixed(2)} د.ل</span>
+                  <span className="flex items-center gap-1">
+                    <Calculator className="w-4 h-4 text-blue-600" />
+                    أيام العمل
+                  </span>
+                  <span className="font-medium">{attendanceStats.present_days} يوم</span>
                 </div>
-              )}
-              
-              {attendanceStats.total_deductions > 0 && (
+                
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">الخصومات</span>
-                  <span className="font-medium text-red-600">-{attendanceStats.total_deductions.toFixed(2)} د.ل</span>
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="w-4 h-4 text-green-600" />
+                    اليومية
+                  </span>
+                  <span className="font-medium">{dailyWage.toFixed(2)} د.ل</span>
                 </div>
-              )}
-              
-              <hr className="my-2" />
-              <div className="flex justify-between items-center font-semibold text-lg">
-                <span>صافي المستحق</span>
-                <span className="text-primary">{netAmount.toFixed(2)} د.ل</span>
+                
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="w-4 h-4 text-green-600" />
+                    إجمالي الكسب
+                  </span>
+                  <span className="font-medium">{calculatedEarnings.toFixed(2)} د.ل</span>
+                </div>
+
+                {attendanceStats.total_bonuses > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1">
+                      <DollarSign className="w-4 h-4 text-green-600" />
+                      المكافآت
+                    </span>
+                    <span className="font-medium text-green-600">+{attendanceStats.total_bonuses.toFixed(2)} د.ل</span>
+                  </div>
+                )}
+
+                {attendanceStats.total_deductions > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1">
+                      <Minus className="w-4 h-4 text-red-600" />
+                      الخصومات
+                    </span>
+                    <span className="font-medium text-red-600">-{attendanceStats.total_deductions.toFixed(2)} د.ل</span>
+                  </div>
+                )}
+
+                {totalWithdrawals > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1">
+                      <Minus className="w-4 h-4 text-red-600" />
+                      المسحوبات
+                    </span>
+                    <span className="font-medium text-red-600">-{totalWithdrawals.toFixed(2)} د.ل</span>
+                  </div>
+                )}
+
+                <hr className="my-2" />
+                
+                <div className="flex justify-between items-center font-semibold">
+                  <span>الرصيد المتاح</span>
+                  <span className={`text-lg ${currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {currentBalance >= 0 ? '+' : ''}{currentBalance.toFixed(2)} د.ل
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -235,6 +285,11 @@ export const SalaryPaymentModal = ({
             {amountPaid && (
               <p className="text-xs text-muted-foreground text-center">
                 المتبقي: {remainingBalance.toFixed(2)} د.ل
+                {remainingBalance === 0 && (
+                  <span className="block text-green-600 font-medium mt-1">
+                    سيتم تصفير المسحوبات تلقائياً
+                  </span>
+                )}
               </p>
             )}
           </div>
@@ -244,7 +299,7 @@ export const SalaryPaymentModal = ({
             <Label htmlFor="notes">ملاحظات (اختياري)</Label>
             <Textarea
               id="notes"
-              placeholder="أي ملاحظات إضافية..."
+              placeholder="أي ملاحظات حول الدفع..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
@@ -258,7 +313,7 @@ export const SalaryPaymentModal = ({
             </Button>
             <Button 
               onClick={handlePayment} 
-              disabled={isProcessing}
+              disabled={isProcessing || !amountPaid || parseFloat(amountPaid) <= 0 || parseFloat(amountPaid) > currentBalance}
               className="flex-1"
             >
               <DollarSign className="w-4 h-4 ml-2" />
