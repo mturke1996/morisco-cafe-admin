@@ -111,7 +111,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
                   isPositive ? "text-green-600" : isNegative ? "text-red-600" : "text-gray-600"
                 }`}
               >
-                {formatCurrency(Math.abs(difference))} د.ل ({differenceText})
+                {formatCurrency(Math.abs(difference))}  ({differenceText})
               </span>
             </div>
           </div>
