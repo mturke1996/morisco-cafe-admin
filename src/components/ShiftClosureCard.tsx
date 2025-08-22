@@ -33,13 +33,13 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
     Array.isArray((closure as any).shift_closure_expenses) &&
     (closure as any).shift_closure_expenses.length > 0;
 
-  // 1️⃣ النقد المتوفر = الكاش + البطاقة المصرفية + بطاقة تداول
+  // 1️⃣ النقد المتوفر = كاش + بطاقة مصرفية + بطاقة تداول
   const availableCash = closure.cash_sales + closure.card_sales + closure.tadawul_sales;
 
-  // 2️⃣ مبيعات الشاشة
-  const screenSales = closure.screen_sales;
+  // 2️⃣ إجمالي المبيعات = مبيعات الشاشة فقط
+  const totalSales = closure.screen_sales;
 
-  // 3️⃣ المجموع المحسوب
+  // 3️⃣ المجموع المحسوب = نحاس + رقاق + غلاض + كاش + بطاقة مصرفية + بطاقة تداول + المصروفات + بريستو - الورديه السابقة
   const totalCalculated =
     closure.coins_small +
     closure.coins_one_dinar +
@@ -49,10 +49,10 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
     closure.tadawul_sales +
     closure.presto_sales +
     closure.shift_expenses -
-    (closure.prev_coins_small + closure.prev_coins_one_dinar + closure.prev_bills_large + screenSales);
+    (closure.prev_coins_small + closure.prev_coins_one_dinar + closure.prev_bills_large);
 
-  // 4️⃣ الفرق
-  const difference = totalCalculated - screenSales;
+  // 4️⃣ الفرق = المجموع المحسوب - مبيعات الشاشة
+  const difference = totalCalculated - closure.screen_sales;
   const isPositive = difference > 0;
   const isNegative = difference < 0;
   const differenceText = isPositive ? "فائض" : isNegative ? "عجز" : "متوازن";
@@ -78,7 +78,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
                 <TrendingUp className="w-4 h-4 text-green-600" />
                 <span className="text-xs text-green-700">إجمالي المبيعات</span>
               </div>
-              <p className="text-lg font-bold text-green-700">{formatCurrency(totalCalculated)}</p>
+              <p className="text-lg font-bold text-green-700">{formatCurrency(totalSales)}</p>
             </div>
 
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -99,7 +99,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
 
             <div className="flex justify-between items-center">
               <span className="text-sm">مبيعات الشاشة</span>
-              <span className="font-semibold">{formatCurrency(screenSales)}</span>
+              <span className="font-semibold">{formatCurrency(closure.screen_sales)}</span>
             </div>
 
             <hr className="my-2" />
