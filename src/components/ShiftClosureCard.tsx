@@ -39,21 +39,16 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
     Array.isArray((closure as any).shift_closure_expenses) &&
     (closure as any).shift_closure_expenses.length > 0;
 
-  // حساب المبيعات والفرق
-  const screenSales =
-    closure.cash_sales +
-    closure.card_sales +
-    closure.tadawul_sales +
-    closure.presto_sales;
-
-  const difference = closure.total_calculated - screenSales;
-  const isPositive = difference > 0;
-  const isNegative = difference < 0;
-  const differenceText = isPositive
-    ? "فائض"
-    : isNegative
-    ? "عجز"
-    : "";
+  // الحسابات حسب كود ShiftClosureModal
+  const currentCash =
+    closure.coins_small + closure.coins_one_dinar + closure.bills_large + closure.cash_sales + closure.card_sales;
+  const totalSales =
+    closure.cash_sales + closure.card_sales + closure.tadawul_sales + closure.presto_sales;
+  const screenSales = closure.screen_sales;
+  const finalDifference = currentCash + totalSales + closure.shift_expenses - screenSales;
+  const isPositive = finalDifference > 0;
+  const isNegative = finalDifference < 0;
+  const differenceText = isPositive ? "فائض" : isNegative ? "عجز" : "متوازن";
 
   return (
     <>
@@ -80,9 +75,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
                 <TrendingUp className="w-4 h-4 text-green-600" />
                 <span className="text-xs text-green-700">إجمالي المبيعات</span>
               </div>
-              <p className="text-lg font-bold text-green-700">
-                {formatCurrency(screenSales)}
-              </p>
+              <p className="text-lg font-bold text-green-700">{formatCurrency(totalSales)}</p>
             </div>
 
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
@@ -90,13 +83,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
                 <DollarSign className="w-4 h-4 text-blue-600" />
                 <span className="text-xs text-blue-700">النقد المتوفر</span>
               </div>
-              <p className="text-lg font-bold text-blue-700">
-                {formatCurrency(
-                  closure.coins_small +
-                    closure.coins_one_dinar +
-                    closure.bills_large
-                )}
-              </p>
+              <p className="text-lg font-bold text-blue-700">{formatCurrency(currentCash)}</p>
             </div>
           </div>
 
@@ -104,9 +91,7 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
           <div className="bg-muted/50 p-4 rounded-lg space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm">المجموع المحسوب</span>
-              <span className="font-semibold">
-                {formatCurrency(closure.total_calculated)}
-              </span>
+              <span className="font-semibold">{formatCurrency(currentCash + totalSales + closure.shift_expenses)}</span>
             </div>
 
             <div className="flex justify-between items-center">
@@ -118,25 +103,13 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
 
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">الفرق</span>
-              <div className="flex items-center gap-2">
-                {isPositive ? (
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                ) : isNegative ? (
-                  <TrendingDown className="w-4 h-4 text-red-600" />
-                ) : null}
-                <span
-                  className={`font-bold text-lg ${
-                    isPositive
-                      ? "text-green-600"
-                      : isNegative
-                      ? "text-red-600"
-                      : "text-gray-600"
-                  }`}
-                >
-                  {isPositive ? "+" : isNegative ? "-" : ""}
-                  {formatCurrency(Math.abs(difference))} {differenceText}
-                </span>
-              </div>
+              <span
+                className={`font-bold text-lg ${
+                  isPositive ? "text-green-600" : isNegative ? "text-red-600" : "text-gray-600"
+                }`}
+              >
+                {formatCurrency(Math.abs(finalDifference))} {differenceText}
+              </span>
             </div>
           </div>
 
@@ -163,37 +136,30 @@ const ShiftClosureCard = ({ closure, onPrint }: ShiftClosureCardProps) => {
               </div>
               <ScrollArea className="max-h-32">
                 <div className="divide-y">
-                  {(closure as any).shift_closure_expenses
-                    .slice(0, 3)
-                    .map((exp: any) => (
-                      <div
-                        key={exp.id}
-                        className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {exp.title || "مصروفة"}
-                          </p>
-                          {exp.description && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {exp.description}
-                            </p>
-                          )}
-                          {exp.category && (
-                            <span className="inline-block px-2 py-1 text-xs bg-gray-100 rounded-full mt-1">
-                              {exp.category}
-                            </span>
-                          )}
-                        </div>
-                        <span className="font-semibold text-red-600 ml-2">
-                          {formatCurrency(Number(exp.amount || 0))}
-                        </span>
+                  {(closure as any).shift_closure_expenses.slice(0, 3).map((exp: any) => (
+                    <div
+                      key={exp.id}
+                      className="flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{exp.title || "مصروفة"}</p>
+                        {exp.description && (
+                          <p className="text-xs text-muted-foreground truncate">{exp.description}</p>
+                        )}
+                        {exp.category && (
+                          <span className="inline-block px-2 py-1 text-xs bg-gray-100 rounded-full mt-1">
+                            {exp.category}
+                          </span>
+                        )}
                       </div>
-                    ))}
+                      <span className="font-semibold text-red-600 ml-2">
+                        {formatCurrency(Number(exp.amount || 0))}
+                      </span>
+                    </div>
+                  ))}
                   {(closure as any).shift_closure_expenses.length > 3 && (
                     <div className="px-3 py-2 text-xs text-muted-foreground text-center">
-                      + {(closure as any).shift_closure_expenses.length - 3}{" "}
-                      مصروفة أخرى
+                      + {(closure as any).shift_closure_expenses.length - 3} مصروفة أخرى
                     </div>
                   )}
                 </div>
