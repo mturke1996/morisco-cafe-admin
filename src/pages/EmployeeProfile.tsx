@@ -28,6 +28,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SalaryPaymentModal } from "@/components/SalaryPaymentModal";
 import { AddWithdrawalModal } from "@/components/AddWithdrawalModal";
+import { EditEmployeeModal } from "@/components/EditEmployeeModal";
+import { EmployeeReportGenerator } from "@/components/EmployeeReportGenerator";
+import { ImprovedAttendanceModal } from "@/components/ImprovedAttendanceModal";
 
 interface Employee {
   id: string;
@@ -99,6 +102,63 @@ const EmployeeProfile = () => {
   const [salaryPayments, setSalaryPayments] = useState<SalaryPayment[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteEmployee = async () => {
+    if (!employee) return;
+
+    try {
+      // حذف الموظف من قاعدة البيانات
+      const { error } = await supabase
+        .from("employees")
+        .delete()
+        .eq("id", employee.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم بنجاح",
+        description: "تم حذف الموظف بنجاح",
+      });
+
+      // العودة إلى صفحة الموظفين
+      navigate("/employees");
+    } catch (error) {
+      console.error("خطأ في حذف الموظف:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف الموظف",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEmployeeUpdated = () => {
+    fetchEmployeeData();
+    setShowEditModal(false);
+  };
+
+  const handleAttendanceRecorded = () => {
+    fetchEmployeeData();
+    setShowAttendanceModal(false);
+  };
+
+  const handlePaymentCompleted = () => {
+    fetchEmployeeData();
+    setShowPaymentModal(false);
+  };
+
+  const handleWithdrawalAdded = () => {
+    fetchEmployeeData();
+    setShowWithdrawalModal(false);
+  };
+
+  const handleReportGenerated = () => {
+    setShowReportModal(false);
+  };
 
   const fetchEmployeeData = async () => {
     if (!employeeId) return;
@@ -301,70 +361,81 @@ const EmployeeProfile = () => {
     <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Button
-            onClick={() => navigate("/employees")}
-            variant="outline"
-            size="sm"
-            className="p-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">ملف الموظف</h1>
-            <p className="text-sm text-muted-foreground">
-              معلومات وإحصائيات الموظف
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => navigate("/employees")}
+              variant="outline"
+              size="sm"
+              className="p-2 h-10 w-10 rounded-full hover:bg-slate-100 transition-all duration-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                ملف الموظف
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                معلومات وإحصائيات الموظف
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Employee Basic Info */}
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <User className="w-8 h-8 text-green-600" />
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <User className="w-7 h-7 sm:w-8 sm:h-8 text-green-600" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">{employee.name}</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="text-lg sm:text-xl font-semibold text-green-800">
+                    {employee.name}
+                  </h2>
+                  <p className="text-sm text-green-600 font-medium">
                     {employee.position}
                   </p>
                 </div>
               </div>
               <Badge
                 variant={employee.status === "active" ? "default" : "secondary"}
+                className="text-xs sm:text-sm px-3 py-1 h-auto"
               >
                 {employee.status === "active" ? "نشط" : "غير نشط"}
               </Badge>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {employee.email && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  <span>{employee.email}</span>
+                <div className="flex items-center gap-2 text-sm bg-white/50 p-2 rounded-lg">
+                  <Mail className="w-4 h-4 text-green-600" />
+                  <span className="text-green-700 font-medium">
+                    {employee.email}
+                  </span>
                 </div>
               )}
 
               {employee.phone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
-                  <span>{employee.phone}</span>
+                <div className="flex items-center gap-2 text-sm bg-white/50 p-2 rounded-lg">
+                  <Phone className="w-4 h-4 text-green-600" />
+                  <span className="text-green-700 font-medium">
+                    {employee.phone}
+                  </span>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-sm">
-                <DollarSign className="w-4 h-4 text-muted-foreground" />
-                <span>
+              <div className="flex items-center gap-2 text-sm bg-white/50 p-2 rounded-lg">
+                <DollarSign className="w-4 h-4 text-green-600" />
+                <span className="text-green-700 font-medium">
                   {employee.salary ? `${employee.salary} د.ل` : "غير محدد"}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span>
+              <div className="flex items-center gap-2 text-sm bg-white/50 p-2 rounded-lg">
+                <Calendar className="w-4 h-4 text-green-600" />
+                <span className="text-green-700 font-medium">
                   تاريخ التوظيف:{" "}
                   {new Date(employee.hire_date).toLocaleDateString("ar-LY")}
                 </span>
@@ -374,56 +445,73 @@ const EmployeeProfile = () => {
         </Card>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-md transition-all duration-300">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                </div>
                 <div>
-                  <p className="text-xs text-blue-600">أيام الحضور</p>
-                  <p className="text-lg font-bold text-blue-800">
+                  <p className="text-xs sm:text-sm text-blue-600 font-medium">
+                    أيام الحضور
+                  </p>
+                  <p className="text-lg sm:text-xl font-bold text-blue-800">
                     {attendanceStats.present_days}
                   </p>
                 </div>
-                <Clock className="w-5 h-5 text-blue-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:shadow-md transition-all duration-300">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                </div>
                 <div>
-                  <p className="text-xs text-purple-600">معدل الحضور</p>
-                  <p className="text-lg font-bold text-purple-800">
+                  <p className="text-xs sm:text-sm text-purple-600 font-medium">
+                    معدل الحضور
+                  </p>
+                  <p className="text-lg sm:text-xl font-bold text-purple-800">
                     {attendanceRate}%
                   </p>
                 </div>
-                <TrendingUp className="w-5 h-5 text-purple-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-md transition-all duration-300">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Target className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                </div>
                 <div>
-                  <p className="text-xs text-green-600">اليومية</p>
-                  <p className="text-lg font-bold text-green-800">
+                  <p className="text-xs sm:text-sm text-green-600 font-medium">
+                    اليومية
+                  </p>
+                  <p className="text-lg sm:text-xl font-bold text-green-800">
                     {dailyWage.toFixed(2)} د.ل
                   </p>
                 </div>
-                <Target className="w-5 h-5 text-green-600" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 hover:shadow-md transition-all duration-300">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
+                </div>
                 <div>
-                  <p className="text-xs text-orange-600">الرصيد النهائي</p>
+                  <p className="text-xs sm:text-sm text-orange-600 font-medium">
+                    الرصيد النهائي
+                  </p>
                   <p
-                    className={`text-lg font-bold ${
+                    className={`text-lg sm:text-xl font-bold ${
                       finalBalance >= 0 ? "text-green-800" : "text-red-800"
                     }`}
                   >
@@ -431,31 +519,30 @@ const EmployeeProfile = () => {
                     {finalBalance.toFixed(2)} د.ل
                   </p>
                 </div>
-                <Wallet className="w-5 h-5 text-orange-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Financial Summary */}
-        <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="w-5 h-5" />
+        <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 hover:shadow-lg transition-all duration-300">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl text-gray-800">
+              <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
               الملخص المالي للشهر الحالي
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
             {/* Basic Calculations */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">أيام العمل</p>
-                <p className="text-2xl font-bold text-primary">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-3 bg-white/50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600 font-medium">أيام العمل</p>
+                <p className="text-xl sm:text-2xl font-bold text-primary">
                   {attendanceStats.present_days}
                 </p>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">اليومية</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm text-gray-600 font-medium">اليومية</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600">
                     {dailyWage.toFixed(2)} د.ل
                   </p>
                 </div>
@@ -582,32 +669,32 @@ const EmployeeProfile = () => {
 
         {/* Withdrawal History */}
         {withdrawals.length > 0 && (
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-800">
-                <Minus className="w-5 h-5" />
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-red-800 text-lg sm:text-xl">
+                <Minus className="w-5 h-5 sm:w-6 sm:h-6" />
                 سجل المسحوبات للشهر الحالي
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 p-4 sm:p-6 pt-0">
               {withdrawals.map((withdrawal) => (
                 <div
                   key={withdrawal.id}
-                  className="flex justify-between items-center p-3 bg-white/50 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-red-600">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="font-bold text-red-600 text-lg">
                         -{withdrawal.amount.toFixed(2)} د.ل
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-red-500 font-medium">
                         {new Date(
                           withdrawal.withdrawal_date
                         ).toLocaleDateString("ar-LY")}
                       </span>
                     </div>
                     {withdrawal.notes && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-red-400 mt-2 bg-red-50 p-2 rounded">
                         {withdrawal.notes}
                       </p>
                     )}
@@ -620,32 +707,32 @@ const EmployeeProfile = () => {
 
         {/* Salary Payments History */}
         {salaryPayments.length > 0 && (
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-800">
-                <DollarSign className="w-5 h-5" />
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-green-800 text-lg sm:text-xl">
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" />
                 سجل مدفوعات الرواتب للشهر الحالي
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 p-4 sm:p-6 pt-0">
               {salaryPayments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="flex justify-between items-center p-3 bg-white/50 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-all duration-200"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-green-600">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="font-bold text-green-600 text-lg">
                         +{payment.amount_paid.toFixed(2)} د.ل
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-green-500 font-medium">
                         {new Date(payment.payment_date).toLocaleDateString(
                           "ar-LY"
                         )}
                       </span>
                     </div>
                     {payment.notes && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-green-400 mt-2 bg-green-50 p-2 rounded">
                         {payment.notes}
                       </p>
                     )}
@@ -658,50 +745,62 @@ const EmployeeProfile = () => {
 
         {/* Employee Profile Details */}
         {profile && (
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-800">
-                <User className="w-5 h-5" />
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-blue-800 text-lg sm:text-xl">
+                <User className="w-5 h-5 sm:w-6 sm:h-6" />
                 تفاصيل الملف الشخصي
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">اليومية المحددة</span>
-                <span className="font-medium">
-                  {profile.daily_wage.toFixed(2)} د.ل
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm">إجمالي ساعات العمل</span>
-                <span className="font-medium">
-                  {profile.total_work_hours.toFixed(1)} ساعة
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm">المسحوبات الشهرية</span>
-                <span className="font-medium">
-                  {profile.monthly_withdrawals.toFixed(2)} د.ل
-                </span>
-              </div>
-
-              {profile.last_withdrawal_date && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">آخر سحب</span>
-                  <span className="font-medium">
-                    {new Date(profile.last_withdrawal_date).toLocaleDateString(
-                      "ar-LY"
-                    )}
+            <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <span className="text-sm text-blue-600 font-medium block mb-1">
+                    اليومية المحددة
+                  </span>
+                  <span className="text-lg font-bold text-blue-800">
+                    {profile.daily_wage.toFixed(2)} د.ل
                   </span>
                 </div>
-              )}
+
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <span className="text-sm text-blue-600 font-medium block mb-1">
+                    إجمالي ساعات العمل
+                  </span>
+                  <span className="text-lg font-bold text-blue-800">
+                    {profile.total_work_hours.toFixed(1)} ساعة
+                  </span>
+                </div>
+
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <span className="text-sm text-blue-600 font-medium block mb-1">
+                    المسحوبات الشهرية
+                  </span>
+                  <span className="text-lg font-bold text-blue-800">
+                    {profile.monthly_withdrawals.toFixed(2)} د.ل
+                  </span>
+                </div>
+
+                {profile.last_withdrawal_date && (
+                  <div className="bg-white/50 p-3 rounded-lg">
+                    <span className="text-sm text-blue-600 font-medium block mb-1">
+                      آخر سحب
+                    </span>
+                    <span className="text-lg font-bold text-blue-800">
+                      {new Date(
+                        profile.last_withdrawal_date
+                      ).toLocaleDateString("ar-LY")}
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {profile.notes && (
                 <div className="mt-4">
-                  <p className="text-sm text-muted-foreground mb-2">ملاحظات:</p>
-                  <p className="text-sm bg-white p-3 rounded-md">
+                  <p className="text-sm text-blue-600 font-medium mb-2">
+                    ملاحظات:
+                  </p>
+                  <p className="text-sm bg-white p-3 rounded-md border-r-4 border-blue-400">
                     {profile.notes}
                   </p>
                 </div>
@@ -711,18 +810,54 @@ const EmployeeProfile = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-3">
+        <div className="space-y-4">
+          {/* Main Action Buttons - كل اثنين بجانب بعض */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => setShowEditModal(true)}
+              variant="outline"
+              className="w-full h-14 text-base font-semibold border-2 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-300 rounded-xl shadow-md hover:shadow-lg"
+            >
+              <Edit className="w-5 h-5 ml-2" />
+              تعديل الموظف
+            </Button>
+            <Button
+              onClick={() => setShowReportModal(true)}
+              className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-xl"
+            >
+              <FileText className="w-5 h-5 ml-2" />
+              إنشاء تقرير
+            </Button>
+          </div>
+
+          {/* Financial Action Buttons - كل اثنين بجانب بعض */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => setShowWithdrawalModal(true)}
+              variant="outline"
+              className="w-full h-14 text-base font-semibold border-2 border-orange-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-300 rounded-xl shadow-md hover:shadow-lg"
+            >
+              <Minus className="w-5 h-5 ml-2" />
+              سحب مبلغ
+            </Button>
+            <Button
+              onClick={() => setShowPaymentModal(true)}
+              disabled={finalBalance <= 0}
+              className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <DollarSign className="w-5 h-5 ml-2" />
+              دفع راتب
+            </Button>
+          </div>
+
+          {/* Delete Employee Button - زر منفصل */}
           <Button
-            onClick={() => navigate(`/employees`)}
-            variant="outline"
-            className="flex-1"
+            onClick={() => setShowDeleteConfirm(true)}
+            variant="destructive"
+            className="w-full h-14 text-base font-semibold border-2 border-red-200 hover:border-red-300 hover:bg-red-50 transition-all duration-300 rounded-xl shadow-md hover:shadow-lg"
           >
-            <Edit className="w-4 h-4 ml-2" />
-            تعديل البيانات
-          </Button>
-          <Button onClick={() => navigate("/attendance")} className="flex-1">
-            <Clock className="w-4 h-4 ml-2" />
-            سجل الحضور
+            <Minus className="w-5 h-5 ml-2" />
+            حذف الموظف
           </Button>
         </div>
       </div>
@@ -744,8 +879,71 @@ const EmployeeProfile = () => {
         currentBalance={finalBalance}
         isOpen={showWithdrawalModal}
         onClose={() => setShowWithdrawalModal(false)}
-        onWithdrawalComplete={handleWithdrawalComplete}
+        onWithdrawalComplete={handleWithdrawalAdded}
       />
+
+      <EditEmployeeModal
+        employee={employee}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onEmployeeUpdated={handleEmployeeUpdated}
+      />
+
+      <EmployeeReportGenerator
+        employee={employee}
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+      />
+
+      <ImprovedAttendanceModal
+        employee={employee}
+        isOpen={showAttendanceModal}
+        onClose={() => setShowAttendanceModal(false)}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Minus className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-red-600">
+                تأكيد حذف الموظف
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                هل أنت متأكد من حذف الموظف{" "}
+                <span className="font-semibold text-gray-800">
+                  "{employee?.name}"
+                </span>
+                ؟
+                <br />
+                <span className="text-red-500 font-medium">
+                  هذا الإجراء لا يمكن التراجع عنه.
+                </span>
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={handleDeleteEmployee}
+                variant="destructive"
+                className="flex-1 h-12 text-base font-semibold"
+              >
+                <Minus className="w-4 h-4 ml-2" />
+                حذف الموظف
+              </Button>
+              <Button
+                onClick={() => setShowDeleteConfirm(false)}
+                variant="outline"
+                className="flex-1 h-12 text-base font-semibold border-2 hover:bg-slate-50"
+              >
+                إلغاء
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -241,6 +241,9 @@ const Attendance = () => {
     early_departure: false,
     notes: "",
   });
+  const [selectedShift, setSelectedShift] = useState<
+    "morning" | "evening" | "both"
+  >("morning");
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -329,27 +332,98 @@ const Attendance = () => {
         .single();
 
       if (existingRecord) {
+        // إذا كان هناك سجل موجود، نتحقق من الوردية
+        if (selectedShift === "morning" && existingRecord.check_in) {
+          toast({
+            title: "تنبيه",
+            description: "تم تسجيل الحضور الصباحي من قبل",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (selectedShift === "evening" && existingRecord.check_out) {
+          toast({
+            title: "تنبيه",
+            description: "تم تسجيل الحضور المسائي من قبل",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (
+          selectedShift === "both" &&
+          existingRecord.check_in &&
+          existingRecord.check_out
+        ) {
+          toast({
+            title: "تنبيه",
+            description: "تم تسجيل الحضور في الورديتين من قبل",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // تحديث السجل الموجود
+        const updateData: any = {};
+        if (selectedShift === "morning" && !existingRecord.check_in) {
+          updateData.check_in = new Date().toISOString();
+        }
+        if (selectedShift === "evening" && !existingRecord.check_out) {
+          updateData.check_out = new Date().toISOString();
+        }
+        if (selectedShift === "both") {
+          if (!existingRecord.check_in)
+            updateData.check_in = new Date().toISOString();
+          if (!existingRecord.check_out)
+            updateData.check_out = new Date().toISOString();
+        }
+
+        const { error } = await supabase
+          .from("attendance")
+          .update(updateData)
+          .eq("id", existingRecord.id);
+
+        if (error) throw error;
+
         toast({
-          title: "تنبيه",
-          description: "تم تسجيل حضور هذا الموظف من قبل اليوم",
-          variant: "destructive",
+          title: "تم بنجاح",
+          description: `تم تسجيل الحضور في الوردية ${
+            selectedShift === "morning"
+              ? "الصباحية"
+              : selectedShift === "evening"
+              ? "المسائية"
+              : "الصباحية والمسائية"
+          } بنجاح`,
         });
-        return;
+      } else {
+        // إنشاء سجل جديد
+        const insertData: any = {
+          employee_id: employeeId,
+          date: selectedDate,
+          status: "present",
+        };
+
+        if (selectedShift === "morning" || selectedShift === "both") {
+          insertData.check_in = new Date().toISOString();
+        }
+        if (selectedShift === "evening" || selectedShift === "both") {
+          insertData.check_out = new Date().toISOString();
+        }
+
+        const { error } = await supabase.from("attendance").insert(insertData);
+
+        if (error) throw error;
+
+        toast({
+          title: "تم بنجاح",
+          description: `تم تسجيل الحضور في الوردية ${
+            selectedShift === "morning"
+              ? "الصباحية"
+              : selectedShift === "evening"
+              ? "المسائية"
+              : "الصباحية والمسائية"
+          } وحساب اليومية بنجاح`,
+        });
       }
-
-      const { error } = await supabase.from("attendance").insert({
-        employee_id: employeeId,
-        date: selectedDate,
-        check_in: new Date().toISOString(),
-        status: "present",
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "تم بنجاح",
-        description: "تم تسجيل الحضور وحساب اليومية بنجاح",
-      });
 
       await fetchAttendanceRecords();
       setIsDialogOpen(false);
@@ -436,56 +510,294 @@ const Attendance = () => {
       <DialogHeader>
         <DialogTitle>تسجيل حضور موظف</DialogTitle>
         <DialogDescription>
-          اختر الموظف لتسجيل حضوره اليوم وحساب يوميته
+          اختر الموظف والوردية لتسجيل الحضور
         </DialogDescription>
       </DialogHeader>
-      <div className="max-h-[70vh] overflow-y-auto pr-1 -mr-1">
-      <ScrollArea className="max-h-96 overflow-y-auto">
-        <div className="space-y-3">
-          {employees.map((employee) => {
-            const hasAttendance = attendanceRecords.some(
-              (record) => record.employee_id === employee.id
-            );
 
-            return (
-              <div
-                key={employee.id}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{employee.name}</p>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {employee.position}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => handleCheckIn(employee.id)}
-                  size="sm"
-                  disabled={hasAttendance}
-                  className={`ml-2 ${
-                    hasAttendance
-                      ? "bg-gray-400"
-                      : "bg-green-600 hover:bg-green-700"
+      {/* Shift Selection */}
+      <div className="mb-6 p-6 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 shadow-sm">
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+            <Clock className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-2">
+            اختر الوردية
+          </h3>
+          <p className="text-slate-600 text-sm">
+            حدد نوع الوردية لتسجيل الحضور
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          {/* Morning Shift */}
+          <div
+            onClick={() => setSelectedShift("morning")}
+            className={`relative cursor-pointer group transition-all duration-300 ${
+              selectedShift === "morning" ? "scale-105" : "hover:scale-102"
+            }`}
+          >
+            <div
+              className={`h-32 rounded-2xl border-2 transition-all duration-300 ${
+                selectedShift === "morning"
+                  ? "border-emerald-500 bg-gradient-to-br from-emerald-50 to-green-100 shadow-lg shadow-emerald-200"
+                  : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md"
+              }`}
+            >
+              <div className="p-4 h-full flex flex-col items-center justify-center text-center">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-all duration-300 ${
+                    selectedShift === "morning"
+                      ? "bg-emerald-500 text-white shadow-lg"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-emerald-100 group-hover:text-emerald-600"
                   }`}
                 >
-                  {hasAttendance ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 ml-1" />
-                      مسجل
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-4 h-4 ml-1" />
-                      حضور
-                    </>
-                  )}
-                </Button>
+                  <Clock className="w-6 h-6" />
+                </div>
+                <h4
+                  className={`font-bold text-lg mb-1 transition-colors duration-300 ${
+                    selectedShift === "morning"
+                      ? "text-emerald-700"
+                      : "text-slate-700 group-hover:text-emerald-700"
+                  }`}
+                >
+                  صباحية
+                </h4>
+                <p
+                  className={`text-xs transition-colors duration-300 ${
+                    selectedShift === "morning"
+                      ? "text-emerald-600"
+                      : "text-slate-500 group-hover:text-emerald-600"
+                  }`}
+                >
+                  وردية الصباح
+                </p>
               </div>
-            );
-          })}
+            </div>
+            {selectedShift === "morning" && (
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-3 h-3 bg-white rounded-full"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Evening Shift */}
+          <div
+            onClick={() => setSelectedShift("evening")}
+            className={`relative cursor-pointer group transition-all duration-300 ${
+              selectedShift === "evening" ? "scale-105" : "hover:scale-102"
+            }`}
+          >
+            <div
+              className={`h-32 rounded-2xl border-2 transition-all duration-300 ${
+                selectedShift === "evening"
+                  ? "border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-100 shadow-lg shadow-blue-200"
+                  : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
+              }`}
+            >
+              <div className="p-4 h-full flex flex-col items-center justify-center text-center">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-all duration-300 ${
+                    selectedShift === "evening"
+                      ? "bg-blue-500 text-white shadow-lg"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-600"
+                  }`}
+                >
+                  <Clock className="w-6 h-6" />
+                </div>
+                <h4
+                  className={`font-bold text-lg mb-1 transition-colors duration-300 ${
+                    selectedShift === "evening"
+                      ? "text-blue-700"
+                      : "text-slate-700 group-hover:text-blue-700"
+                  }`}
+                >
+                  مسائية
+                </h4>
+                <p
+                  className={`text-xs transition-colors duration-300 ${
+                    selectedShift === "evening"
+                      ? "text-blue-600"
+                      : "text-slate-500 group-hover:text-blue-600"
+                  }`}
+                >
+                  وردية المساء
+                </p>
+              </div>
+            </div>
+            {selectedShift === "evening" && (
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-3 h-3 bg-white rounded-full"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Both Shifts */}
+          <div
+            onClick={() => setSelectedShift("both")}
+            className={`relative cursor-pointer group transition-all duration-300 ${
+              selectedShift === "both" ? "scale-105" : "hover:scale-102"
+            }`}
+          >
+            <div
+              className={`h-32 rounded-2xl border-2 transition-all duration-300 ${
+                selectedShift === "both"
+                  ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-100 shadow-lg shadow-purple-200"
+                  : "border-slate-200 bg-white hover:border-purple-300 hover:shadow-md"
+              }`}
+            >
+              <div className="p-4 h-full flex flex-col items-center justify-center text-center">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-all duration-300 ${
+                    selectedShift === "both"
+                      ? "bg-purple-500 text-white shadow-lg"
+                      : "bg-slate-100 text-slate-600 group-hover:bg-purple-100 group-hover:text-purple-600"
+                  }`}
+                >
+                  <Clock className="w-6 h-6" />
+                </div>
+                <h4
+                  className={`font-bold text-lg mb-1 transition-colors duration-300 ${
+                    selectedShift === "both"
+                      ? "text-purple-700"
+                      : "text-slate-700 group-hover:text-purple-700"
+                  }`}
+                >
+                  الورديتين
+                </h4>
+                <p
+                  className={`text-xs transition-colors duration-300 ${
+                    selectedShift === "both"
+                      ? "text-purple-600"
+                      : "text-slate-500 group-hover:text-purple-600"
+                  }`}
+                >
+                  صباح + مساء
+                </p>
+              </div>
+            </div>
+            {selectedShift === "both" && (
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-3 h-3 bg-white rounded-full"></div>
+              </div>
+            )}
+          </div>
         </div>
-      </ScrollArea>
-      </div> 
+      </div>
+
+      <div className="max-h-[70vh] overflow-y-auto pr-1 -mr-1">
+        <ScrollArea className="max-h-96 overflow-y-auto">
+          <div className="space-y-3">
+            {employees.map((employee) => {
+              const existingRecord = attendanceRecords.find(
+                (record) => record.employee_id === employee.id
+              );
+
+              let canCheckIn = true;
+              let statusText = "حضور";
+              let statusColor = "bg-green-600 hover:bg-green-700";
+
+              if (existingRecord) {
+                if (selectedShift === "morning" && existingRecord.check_in) {
+                  canCheckIn = false;
+                  statusText = "مسجل صباحاً";
+                  statusColor = "bg-emerald-400";
+                } else if (
+                  selectedShift === "evening" &&
+                  existingRecord.check_out
+                ) {
+                  canCheckIn = false;
+                  statusText = "مسجل مساءً";
+                  statusColor = "bg-blue-400";
+                } else if (
+                  selectedShift === "both" &&
+                  existingRecord.check_in &&
+                  existingRecord.check_out
+                ) {
+                  canCheckIn = false;
+                  statusText = "مسجل في الورديتين";
+                  statusColor = "bg-purple-400";
+                } else if (selectedShift === "both") {
+                  if (existingRecord.check_in && existingRecord.check_out) {
+                    canCheckIn = false;
+                    statusText = "مسجل في الورديتين";
+                    statusColor = "bg-purple-400";
+                  } else if (existingRecord.check_in) {
+                    statusText = "إضافة مساءً";
+                    statusColor = "bg-blue-600 hover:bg-blue-700";
+                  } else if (existingRecord.check_out) {
+                    statusText = "إضافة صباحاً";
+                    statusColor = "bg-emerald-600 hover:bg-emerald-700";
+                  }
+                }
+              }
+
+              return (
+                <div
+                  key={employee.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{employee.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {employee.position}
+                    </p>
+                    {existingRecord && (
+                      <div className="flex gap-2 mt-1">
+                        {existingRecord.check_in && (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-emerald-100 text-emerald-700"
+                          >
+                            صباح:{" "}
+                            {new Date(
+                              existingRecord.check_in
+                            ).toLocaleTimeString("ar-LY", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Badge>
+                        )}
+                        {existingRecord.check_out && (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-blue-100 text-blue-700"
+                          >
+                            مساء:{" "}
+                            {new Date(
+                              existingRecord.check_out
+                            ).toLocaleTimeString("ar-LY", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => handleCheckIn(employee.id)}
+                    size="sm"
+                    disabled={!canCheckIn}
+                    className={`ml-2 ${statusColor} text-white`}
+                  >
+                    {!canCheckIn ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 ml-1" />
+                        {statusText}
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-4 h-4 ml-1" />
+                        {statusText}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </div>
     </>
   );
 
@@ -524,61 +836,300 @@ const Attendance = () => {
               {isMobile ? (
                 <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DrawerTrigger asChild>
-                    <Button className="w-full bg-primary hover:bg-primary/90">
+                    <Button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                       <Plus className="w-4 h-4 ml-2" />
-                      تسجيل حضور
+                      تسجيل حضور موظف
                     </Button>
                   </DrawerTrigger>
                   <DrawerContent dir="rtl" className="h-[90vh] overflow-y-auto">
                     <DrawerHeader>
                       <DrawerTitle>تسجيل حضور موظف</DrawerTitle>
                       <DrawerDescription>
-                        اختر الموظف لتسجيل حضوره اليوم وحساب يوميته
+                        اختر الموظف والوردية لتسجيل الحضور
                       </DrawerDescription>
                     </DrawerHeader>
-                    <div className="px-4">
-                      <div className="max-h-[70vh] overflow-y-auto pr-1 -mr-1">
-                        <div className="space-y-3">
+                    {/* Shift Selection for Mobile - Compact Design */}
+                    <div className="px-3 mb-4">
+                      <div className="bg-gradient-to-r from-slate-50 to-white rounded-2xl border border-slate-200 shadow-lg p-4">
+                        {/* Header */}
+                        <div className="text-center mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg">
+                            <Clock className="w-6 h-6 text-white" />
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-800 mb-1">
+                            اختر الوردية
+                          </h3>
+                        </div>
+
+                        {/* Shift Options - Horizontal Layout */}
+                        <div className="grid grid-cols-3 gap-2">
+                          {/* Morning Shift */}
+                          <div
+                            onClick={() => setSelectedShift("morning")}
+                            className={`relative cursor-pointer group transition-all duration-300 ${
+                              selectedShift === "morning"
+                                ? "scale-105"
+                                : "hover:scale-102"
+                            }`}
+                          >
+                            <div
+                              className={`h-20 rounded-xl border-2 transition-all duration-300 ${
+                                selectedShift === "morning"
+                                  ? "border-emerald-500 bg-gradient-to-br from-emerald-500 to-green-500 shadow-lg shadow-emerald-500/30"
+                                  : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md"
+                              }`}
+                            >
+                              <div className="p-2 h-full flex flex-col items-center justify-center text-center">
+                                <div
+                                  className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 transition-all duration-300 ${
+                                    selectedShift === "morning"
+                                      ? "bg-white text-emerald-600 shadow-md"
+                                      : "bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200"
+                                  }`}
+                                >
+                                  <Clock className="w-4 h-4" />
+                                </div>
+                                <h4
+                                  className={`font-bold text-sm transition-colors duration-300 ${
+                                    selectedShift === "morning"
+                                      ? "text-white"
+                                      : "text-emerald-700 group-hover:text-emerald-800"
+                                  }`}
+                                >
+                                  صباحية
+                                </h4>
+                              </div>
+                            </div>
+                            {selectedShift === "morning" && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Evening Shift */}
+                          <div
+                            onClick={() => setSelectedShift("evening")}
+                            className={`relative cursor-pointer group transition-all duration-300 ${
+                              selectedShift === "evening"
+                                ? "scale-105"
+                                : "hover:scale-102"
+                            }`}
+                          >
+                            <div
+                              className={`h-20 rounded-xl border-2 transition-all duration-300 ${
+                                selectedShift === "evening"
+                                  ? "border-blue-500 bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/30"
+                                  : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
+                              }`}
+                            >
+                              <div className="p-2 h-full flex flex-col items-center justify-center text-center">
+                                <div
+                                  className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 transition-all duration-300 ${
+                                    selectedShift === "evening"
+                                      ? "bg-white text-blue-600 shadow-md"
+                                      : "bg-blue-100 text-blue-600 group-hover:bg-blue-200"
+                                  }`}
+                                >
+                                  <Clock className="w-4 h-4" />
+                                </div>
+                                <h4
+                                  className={`font-bold text-sm transition-colors duration-300 ${
+                                    selectedShift === "evening"
+                                      ? "text-white"
+                                      : "text-blue-700 group-hover:text-blue-800"
+                                  }`}
+                                >
+                                  مسائية
+                                </h4>
+                              </div>
+                            </div>
+                            {selectedShift === "evening" && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Both Shifts */}
+                          <div
+                            onClick={() => setSelectedShift("both")}
+                            className={`relative cursor-pointer group transition-all duration-300 ${
+                              selectedShift === "both"
+                                ? "scale-105"
+                                : "hover:scale-102"
+                            }`}
+                          >
+                            <div
+                              className={`h-20 rounded-xl border-2 transition-all duration-300 ${
+                                selectedShift === "both"
+                                  ? "border-purple-500 bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/30"
+                                  : "border-slate-200 bg-white hover:border-purple-300 hover:shadow-md"
+                              }`}
+                            >
+                              <div className="p-2 h-full flex flex-col items-center justify-center text-center">
+                                <div
+                                  className={`w-8 h-8 rounded-lg flex items-center justify-center mb-1 transition-all duration-300 ${
+                                    selectedShift === "both"
+                                      ? "bg-white text-purple-600 shadow-md"
+                                      : "bg-purple-100 text-purple-600 group-hover:bg-purple-200"
+                                  }`}
+                                >
+                                  <Clock className="w-4 h-4" />
+                                </div>
+                                <h4
+                                  className={`font-bold text-sm transition-colors duration-300 ${
+                                    selectedShift === "both"
+                                      ? "text-white"
+                                      : "text-purple-700 group-hover:text-purple-800"
+                                  }`}
+                                >
+                                  الورديتين
+                                </h4>
+                              </div>
+                            </div>
+                            {selectedShift === "both" && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Employees List - Compact Mobile Design */}
+                    <div className="px-3 flex-1">
+                      <div className="max-h-[55vh] overflow-y-auto pr-1 -mr-1">
+                        <div className="space-y-2">
                           {employees.map((employee) => {
-                            const hasAttendance = attendanceRecords.some(
+                            const existingRecord = attendanceRecords.find(
                               (record) => record.employee_id === employee.id
                             );
+
+                            let canCheckIn = true;
+                            let statusText = "حضور";
+                            let statusColor = "bg-green-600 hover:bg-green-700";
+
+                            if (existingRecord) {
+                              if (
+                                selectedShift === "morning" &&
+                                existingRecord.check_in
+                              ) {
+                                canCheckIn = false;
+                                statusText = "مسجل صباحاً";
+                                statusColor = "bg-emerald-400";
+                              } else if (
+                                selectedShift === "evening" &&
+                                existingRecord.check_out
+                              ) {
+                                canCheckIn = false;
+                                statusText = "مسجل مساءً";
+                                statusColor = "bg-blue-400";
+                              } else if (
+                                selectedShift === "both" &&
+                                existingRecord.check_in &&
+                                existingRecord.check_out
+                              ) {
+                                canCheckIn = false;
+                                statusText = "مسجل في الورديتين";
+                                statusColor = "bg-purple-400";
+                              } else if (selectedShift === "both") {
+                                if (
+                                  existingRecord.check_in &&
+                                  existingRecord.check_out
+                                ) {
+                                  canCheckIn = false;
+                                  statusText = "مسجل في الورديتين";
+                                  statusColor = "bg-purple-400";
+                                } else if (existingRecord.check_in) {
+                                  statusText = "إضافة مساءً";
+                                  statusColor = "bg-blue-600 hover:bg-blue-700";
+                                } else if (existingRecord.check_out) {
+                                  statusText = "إضافة صباحاً";
+                                  statusColor =
+                                    "bg-emerald-600 hover:bg-emerald-700";
+                                }
+                              }
+                            }
 
                             return (
                               <div
                                 key={employee.id}
-                                className="flex items-center justify-between p-3 border rounded-lg"
+                                className="bg-white border border-slate-200 rounded-xl p-3 hover:shadow-md transition-all duration-200"
                               >
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">
-                                    {employee.name}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground truncate">
-                                    {employee.position}
-                                  </p>
+                                {/* Employee Info Row */}
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center">
+                                      <User className="w-5 h-5 text-slate-600" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-slate-800 truncate">
+                                        {employee.name}
+                                      </p>
+                                      <p className="text-xs text-slate-500 truncate">
+                                        {employee.position}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Status Button */}
+                                  <Button
+                                    onClick={() => handleCheckIn(employee.id)}
+                                    size="sm"
+                                    disabled={!canCheckIn}
+                                    className={`${statusColor} text-white text-xs px-3 py-1.5 h-auto rounded-lg shadow-sm`}
+                                  >
+                                    {!canCheckIn ? (
+                                      <>
+                                        <CheckCircle className="w-3 h-3 ml-1" />
+                                        {statusText}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <LogIn className="w-3 h-3 ml-1" />
+                                        {statusText}
+                                      </>
+                                    )}
+                                  </Button>
                                 </div>
-                                <Button
-                                  onClick={() => handleCheckIn(employee.id)}
-                                  size="sm"
-                                  disabled={hasAttendance}
-                                  className={`ml-2 ${
-                                    hasAttendance
-                                      ? "bg-gray-400"
-                                      : "bg-green-600 hover:bg-green-700"
-                                  }`}
-                                >
-                                  {hasAttendance ? (
-                                    <>
-                                      <CheckCircle className="w-4 h-4 ml-1" />
-                                      مسجل
-                                    </>
-                                  ) : (
-                                    <>
-                                      <LogIn className="w-4 h-4 ml-1" />
-                                      حضور
-                                    </>
-                                  )}
-                                </Button>
+
+                                {/* Attendance Status Badges */}
+                                {existingRecord && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {existingRecord.check_in && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-1"
+                                      >
+                                        <Clock className="w-3 h-3 ml-1" />
+                                        صباح:{" "}
+                                        {new Date(
+                                          existingRecord.check_in
+                                        ).toLocaleTimeString("ar-LY", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </Badge>
+                                    )}
+                                    {existingRecord.check_out && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1"
+                                      >
+                                        <Clock className="w-3 h-3 ml-1" />
+                                        مساء:{" "}
+                                        {new Date(
+                                          existingRecord.check_out
+                                        ).toLocaleTimeString("ar-LY", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -595,12 +1146,12 @@ const Attendance = () => {
               ) : (
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="w-full bg-primary hover:bg-primary/90">
+                    <Button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                       <Plus className="w-4 h-4 ml-2" />
-                      تسجيل حضور
+                      تسجيل حضور موظف
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md mx-auto" dir="rtl">
+                  <DialogContent className="max-w-lg mx-auto" dir="rtl">
                     <CheckInDialogContent />
                   </DialogContent>
                 </Dialog>
