@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Plus, 
-  Minus, 
-  X, 
-  FileText, 
-  DollarSign, 
+import {
+  Plus,
+  Minus,
+  X,
+  FileText,
+  DollarSign,
   Calendar,
   User,
-  Receipt
+  Receipt,
 } from "lucide-react";
 
 interface InvoiceItem {
@@ -29,7 +34,7 @@ interface InvoiceItem {
 interface InvoiceGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
-  type: 'invoice' | 'report' | 'salary' | 'expense';
+  type: "invoice" | "report" | "salary" | "expense";
   title: string;
   customer?: {
     name: string;
@@ -50,10 +55,12 @@ export const InvoiceGenerator = ({
   title,
   customer,
   employee,
-  initialData
+  initialData,
 }: InvoiceGeneratorProps) => {
   const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [invoiceDate, setInvoiceDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [notes, setNotes] = useState("");
   const [taxRate, setTaxRate] = useState(14);
@@ -64,26 +71,29 @@ export const InvoiceGenerator = ({
       description: "",
       quantity: 1,
       unitPrice: 0,
-      totalPrice: 0
+      totalPrice: 0,
     };
     setItems([...items, newItem]);
   };
 
   const removeItem = (id: string) => {
-    setItems(items.filter(item => item.id !== id));
+    setItems(items.filter((item) => item.id !== id));
   };
 
   const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
-    setItems(items.map(item => {
-      if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
-        if (field === 'quantity' || field === 'unitPrice') {
-          updatedItem.totalPrice = updatedItem.quantity * updatedItem.unitPrice;
+    setItems(
+      items.map((item) => {
+        if (item.id === id) {
+          const updatedItem = { ...item, [field]: value };
+          if (field === "quantity" || field === "unitPrice") {
+            updatedItem.totalPrice =
+              updatedItem.quantity * updatedItem.unitPrice;
+          }
+          return updatedItem;
         }
-        return updatedItem;
-      }
-      return item;
-    }));
+        return item;
+      })
+    );
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -91,7 +101,7 @@ export const InvoiceGenerator = ({
   const total = subtotal + taxAmount;
 
   const generatePDF = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const html = `
@@ -302,22 +312,42 @@ export const InvoiceGenerator = ({
               
               <div class="bill-info">
                   <div class="section">
-                      <p><span>تاريخ ${title}:</span> ${new Date(invoiceDate).toLocaleDateString('ar-LY')}</p>
-                      <p><span>رقم ${title}:</span> ${invoiceNumber || 'غير محدد'}</p>
+                      <p><span>تاريخ ${title}:</span> ${new Date(
+      invoiceDate
+    ).toLocaleDateString("ar-LY")}</p>
+                      <p><span>رقم ${title}:</span> ${
+      invoiceNumber || "غير محدد"
+    }</p>
                   </div>
                   <div class="section">
-                      ${customer ? `
+                      ${
+                        customer
+                          ? `
                           <p><span>${title} إلى:</span> ${customer.name}</p>
-                          ${customer.phone ? `<p><span>هاتف العميل:</span> ${customer.phone}</p>` : ''}
-                          ${customer.email ? `<p><span>البريد الإلكتروني:</span> ${customer.email}</p>` : ''}
-                      ` : employee ? `
+                          ${
+                            customer.phone
+                              ? `<p><span>هاتف العميل:</span> ${customer.phone}</p>`
+                              : ""
+                          }
+                          ${
+                            customer.email
+                              ? `<p><span>البريد الإلكتروني:</span> ${customer.email}</p>`
+                              : ""
+                          }
+                      `
+                          : employee
+                          ? `
                           <p><span>اسم الموظف:</span> ${employee.name}</p>
                           <p><span>المنصب:</span> ${employee.position}</p>
-                      ` : ''}
+                      `
+                          : ""
+                      }
                   </div>
               </div>
 
-              ${items.length > 0 ? `
+              ${
+                items.length > 0
+                  ? `
                   <table class="invoice-table">
                       <thead>
                           <tr>
@@ -329,7 +359,9 @@ export const InvoiceGenerator = ({
                           </tr>
                       </thead>
                       <tbody>
-                          ${items.map((item, index) => `
+                          ${items
+                            .map(
+                              (item, index) => `
                               <tr>
                                   <td>${index + 1}</td>
                                   <td>${item.description}</td>
@@ -337,10 +369,14 @@ export const InvoiceGenerator = ({
                                   <td>${item.unitPrice.toFixed(2)} دينار</td>
                                   <td>${item.totalPrice.toFixed(2)} دينار</td>
                               </tr>
-                          `).join('')}
+                          `
+                            )
+                            .join("")}
                       </tbody>
                   </table>
-              ` : ''}
+              `
+                  : ""
+              }
 
               <div class="summary-section">
                   <div class="summary-box">
@@ -359,12 +395,16 @@ export const InvoiceGenerator = ({
                   </div>
               </div>
 
-              ${notes ? `
+              ${
+                notes
+                  ? `
                   <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
                       <h3 style="margin: 0 0 10px 0; color: #495057;">ملاحظات:</h3>
                       <p style="margin: 0; color: #6c757d;">${notes}</p>
                   </div>
-              ` : ''}
+              `
+                  : ""
+              }
 
               <div class="footer">
                   <p>شكراً لزيارتكم موريسكو كافيه. نأمل أن نراكم مرة أخرى قريباً!</p>
@@ -377,7 +417,7 @@ export const InvoiceGenerator = ({
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
-    
+
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
@@ -386,7 +426,10 @@ export const InvoiceGenerator = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl mx-auto max-h-[90vh] overflow-y-auto" dir="rtl">
+      <DialogContent
+        className="max-w-4xl mx-auto max-h-[90vh] overflow-y-auto"
+        dir="rtl"
+      >
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -438,13 +481,20 @@ export const InvoiceGenerator = ({
                 <ScrollArea className="max-h-60">
                   <div className="space-y-3">
                     {items.map((item, index) => (
-                      <div key={item.id} className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg">
-                        <div className="col-span-1 text-sm font-medium">{index + 1}</div>
+                      <div
+                        key={item.id}
+                        className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg"
+                      >
+                        <div className="col-span-1 text-sm font-medium">
+                          {index + 1}
+                        </div>
                         <div className="col-span-4">
                           <Input
                             placeholder="وصف المنتج أو الخدمة"
                             value={item.description}
-                            onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                            onChange={(e) =>
+                              updateItem(item.id, "description", e.target.value)
+                            }
                           />
                         </div>
                         <div className="col-span-2">
@@ -452,7 +502,13 @@ export const InvoiceGenerator = ({
                             type="number"
                             placeholder="الكمية"
                             value={item.quantity}
-                            onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updateItem(
+                                item.id,
+                                "quantity",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
                           />
                         </div>
                         <div className="col-span-2">
@@ -460,11 +516,19 @@ export const InvoiceGenerator = ({
                             type="number"
                             placeholder="السعر"
                             value={item.unitPrice}
-                            onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updateItem(
+                                item.id,
+                                "unitPrice",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
                           />
                         </div>
                         <div className="col-span-2 flex items-center gap-2">
-                          <span className="font-medium">{item.totalPrice.toFixed(2)} د.ل</span>
+                          <span className="font-medium">
+                            {item.totalPrice.toFixed(2)} د.ل
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -489,16 +553,22 @@ export const InvoiceGenerator = ({
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>المجموع الفرعي:</span>
-                    <span className="font-medium">{subtotal.toFixed(2)} د.ل</span>
+                    <span className="font-medium">
+                      {subtotal.toFixed(2)} د.ل
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>الضريبة ({taxRate}%):</span>
-                    <span className="font-medium">{taxAmount.toFixed(2)} د.ل</span>
+                    <span className="font-medium">
+                      {taxAmount.toFixed(2)} د.ل
+                    </span>
                   </div>
                   <hr className="my-2" />
                   <div className="flex justify-between text-lg font-bold">
                     <span>المجموع النهائي:</span>
-                    <span className="text-green-600">{total.toFixed(2)} د.ل</span>
+                    <span className="text-green-600">
+                      {total.toFixed(2)} د.ل
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -522,8 +592,8 @@ export const InvoiceGenerator = ({
             <Button variant="outline" onClick={onClose} className="flex-1">
               إلغاء
             </Button>
-            <Button 
-              onClick={generatePDF} 
+            <Button
+              onClick={generatePDF}
               className="flex-1"
               disabled={items.length === 0}
             >

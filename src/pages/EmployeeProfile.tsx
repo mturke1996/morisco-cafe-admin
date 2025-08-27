@@ -31,6 +31,9 @@ import { AddWithdrawalModal } from "@/components/AddWithdrawalModal";
 import { EditEmployeeModal } from "@/components/EditEmployeeModal";
 import { EmployeeReportGenerator } from "@/components/EmployeeReportGenerator";
 import { ImprovedAttendanceModal } from "@/components/ImprovedAttendanceModal";
+import { EmployeeNotesModal } from "@/components/EmployeeNotesModal";
+import { EmployeeAdjustmentsModal } from "@/components/EmployeeAdjustmentsModal";
+import { AdvancedShiftsModal } from "@/components/AdvancedShiftsModal";
 
 interface Employee {
   id: string;
@@ -41,6 +44,14 @@ interface Employee {
   salary: number;
   hire_date: string;
   status: string;
+  employment_type: 'shift_based' | 'full_time' | 'part_time';
+  work_schedule?: any;
+  contract_start_date?: string;
+  contract_end_date?: string;
+  emergency_contact?: string;
+  id_number?: string;
+  bank_account?: string;
+  social_security_number?: string;
 }
 
 interface EmployeeProfile {
@@ -105,6 +116,9 @@ const EmployeeProfile = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showAdjustmentsModal, setShowAdjustmentsModal] = useState(false);
+  const [showShiftsModal, setShowShiftsModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDeleteEmployee = async () => {
@@ -158,6 +172,18 @@ const EmployeeProfile = () => {
 
   const handleReportGenerated = () => {
     setShowReportModal(false);
+  };
+
+  const handleNotesModalClose = () => {
+    setShowNotesModal(false);
+  };
+
+  const handleAdjustmentsModalClose = () => {
+    setShowAdjustmentsModal(false);
+  };
+
+  const handleShiftsModalClose = () => {
+    setShowShiftsModal(false);
   };
 
   const fetchEmployeeData = async () => {
@@ -830,12 +856,50 @@ const EmployeeProfile = () => {
             </Button>
           </div>
 
+          {/* Advanced Management Buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => setShowNotesModal(true)}
+              variant="outline"
+              className="w-full h-14 text-base font-semibold border-2 border-blue-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 rounded-xl shadow-md hover:shadow-lg"
+            >
+              <FileText className="w-5 h-5 ml-2" />
+              ملاحظات الموظف
+            </Button>
+            <Button
+              onClick={() => setShowAdjustmentsModal(true)}
+              className="w-full h-14 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-xl"
+            >
+              <DollarSign className="w-5 h-5 ml-2" />
+              الإضافي والخصم
+            </Button>
+          </div>
+
+          {/* Shifts and Financial Buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              onClick={() => setShowShiftsModal(true)}
+              variant="outline"
+              className="w-full h-14 text-base font-semibold border-2 border-orange-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-300 rounded-xl shadow-md hover:shadow-lg"
+            >
+              <Clock className="w-5 h-5 ml-2" />
+              إدارة الورديات
+            </Button>
+            <Button
+              onClick={() => setShowAttendanceModal(true)}
+              className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-xl"
+            >
+              <Calendar className="w-5 h-5 ml-2" />
+              تسجيل الحضور
+            </Button>
+          </div>
+
           {/* Financial Action Buttons - كل اثنين بجانب بعض */}
           <div className="grid grid-cols-2 gap-3">
             <Button
               onClick={() => setShowWithdrawalModal(true)}
               variant="outline"
-              className="w-full h-14 text-base font-semibold border-2 border-orange-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-300 rounded-xl shadow-md hover:shadow-lg"
+              className="w-full h-14 text-base font-semibold border-2 border-red-200 hover:border-red-300 hover:bg-red-50 transition-all duration-300 rounded-xl shadow-md hover:shadow-lg"
             >
               <Minus className="w-5 h-5 ml-2" />
               سحب مبلغ
@@ -899,6 +963,24 @@ const EmployeeProfile = () => {
         employee={employee}
         isOpen={showAttendanceModal}
         onClose={() => setShowAttendanceModal(false)}
+      />
+
+      <EmployeeNotesModal
+        employee={employee}
+        isOpen={showNotesModal}
+        onClose={handleNotesModalClose}
+      />
+
+      <EmployeeAdjustmentsModal
+        employee={employee}
+        isOpen={showAdjustmentsModal}
+        onClose={handleAdjustmentsModalClose}
+      />
+
+      <AdvancedShiftsModal
+        employee={employee}
+        isOpen={showShiftsModal}
+        onClose={handleShiftsModalClose}
       />
 
       {/* Delete Confirmation Dialog */}
