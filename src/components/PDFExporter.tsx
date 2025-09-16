@@ -54,7 +54,7 @@ class PDFExporter {
     if (includeDate) {
       this.doc.setFontSize(10);
       this.doc.setFont("helvetica", "normal");
-      const currentDate = new Date().toLocaleDateString("ar-SA");
+      const currentDate = new Date().toLocaleDateString("en-US");
       this.doc.text(`تاريخ التقرير: ${currentDate}`, 20, 30);
     }
 
@@ -182,7 +182,7 @@ class PDFExporter {
     }
 
     if (value instanceof Date) {
-      return value.toLocaleDateString("ar-SA");
+      return value.toLocaleDateString("en-US");
     }
 
     return String(value);

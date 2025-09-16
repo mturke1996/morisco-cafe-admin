@@ -382,7 +382,7 @@ export const ReportsGenerator = ({
               endDate: reportData.endDate,
               dateRange: `${new Date(reportData.startDate).toLocaleDateString(
                 "ar-SA"
-              )} - ${new Date(reportData.endDate).toLocaleDateString("ar-SA")}`,
+              )} - ${new Date(reportData.endDate).toLocaleDateString("en-US")}`,
             },
           });
           break;
@@ -395,7 +395,7 @@ export const ReportsGenerator = ({
               endDate: reportData.endDate,
               dateRange: `${new Date(reportData.startDate).toLocaleDateString(
                 "ar-SA"
-              )} - ${new Date(reportData.endDate).toLocaleDateString("ar-SA")}`,
+              )} - ${new Date(reportData.endDate).toLocaleDateString("en-US")}`,
             },
           });
           break;
@@ -407,7 +407,7 @@ export const ReportsGenerator = ({
               endDate: reportData.endDate,
               dateRange: `${new Date(reportData.startDate).toLocaleDateString(
                 "ar-SA"
-              )} - ${new Date(reportData.endDate).toLocaleDateString("ar-SA")}`,
+              )} - ${new Date(reportData.endDate).toLocaleDateString("en-US")}`,
             },
           });
           break;
@@ -419,7 +419,7 @@ export const ReportsGenerator = ({
               endDate: reportData.endDate,
               dateRange: `${new Date(reportData.startDate).toLocaleDateString(
                 "ar-SA"
-              )} - ${new Date(reportData.endDate).toLocaleDateString("ar-SA")}`,
+              )} - ${new Date(reportData.endDate).toLocaleDateString("en-US")}`,
             },
           });
           break;

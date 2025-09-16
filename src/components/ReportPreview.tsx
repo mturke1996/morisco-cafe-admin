@@ -58,7 +58,7 @@ export const ReportPreview = ({
   if (!isOpen || !reportData) return null;
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("ar-SA");
+    return new Date(dateString).toLocaleDateString("en-US");
   };
 
   const formatNumber = (num: number) => {
@@ -379,7 +379,7 @@ export const ReportPreview = ({
 
     if (typeof value === "string" && value.includes("T")) {
       try {
-        return new Date(value).toLocaleDateString("ar-SA");
+        return new Date(value).toLocaleDateString("en-US");
       } catch {
         return value;
       }

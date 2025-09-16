@@ -314,7 +314,7 @@ export const InvoiceGenerator = ({
                   <div class="section">
                       <p><span>تاريخ ${title}:</span> ${new Date(
       invoiceDate
-    ).toLocaleDateString("ar-LY")}</p>
+    ).toLocaleDateString("en-US")}</p>
                       <p><span>رقم ${title}:</span> ${
       invoiceNumber || "غير محدد"
     }</p>

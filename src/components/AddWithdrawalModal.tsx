@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,17 +23,15 @@ interface Employee {
 interface AddWithdrawalModalProps {
   employee: Employee;
   currentBalance: number;
-  isOpen: boolean;
-  onClose: () => void;
-  onWithdrawalComplete: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export const AddWithdrawalModal = ({
   employee,
   currentBalance,
-  isOpen,
-  onClose,
-  onWithdrawalComplete,
+  open,
+  onOpenChange,
 }: AddWithdrawalModalProps) => {
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
@@ -40,19 +43,23 @@ export const AddWithdrawalModal = ({
       toast({
         title: "خطأ",
         description: "يرجى إدخال مبلغ صحيح",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     const withdrawalAmount = parseFloat(amount);
-    
+
     // السماح بالسحب حتى لو كان الرصيد سالب
-    if (withdrawalAmount > Math.abs(currentBalance) + 1000) { // حد أقصى 1000 د.ل فوق الرصيد
+    if (withdrawalAmount > Math.abs(currentBalance) + 1000) {
+      // حد أقصى 1000 د.ل فوق الرصيد
       toast({
         title: "خطأ",
-        description: "المبلغ المطلوب كبير جداً. الحد الأقصى المسموح: " + (Math.abs(currentBalance) + 1000) + " د.ل",
-        variant: "destructive"
+        description:
+          "المبلغ المطلوب كبير جداً. الحد الأقصى المسموح: " +
+          (Math.abs(currentBalance) + 1000) +
+          " د.ل",
+        variant: "destructive",
       });
       return;
     }
@@ -62,12 +69,12 @@ export const AddWithdrawalModal = ({
       const withdrawalData = {
         employee_id: employee.id,
         amount: withdrawalAmount,
-        withdrawal_date: new Date().toISOString().split('T')[0],
+        withdrawal_date: new Date().toISOString().split("T")[0],
         notes: notes || null,
       };
 
       const { error } = await supabase
-        .from('employee_withdrawals')
+        .from("employee_withdrawals")
         .insert(withdrawalData);
 
       if (error) throw error;
@@ -77,16 +84,15 @@ export const AddWithdrawalModal = ({
         description: `تم تسجيل سحب ${withdrawalAmount.toFixed(2)} د.ل`,
       });
 
-      onWithdrawalComplete();
-      onClose();
+      onOpenChange(false);
       setAmount("");
       setNotes("");
     } catch (error) {
-      console.error('خطأ في تسجيل السحب:', error);
+      console.error("خطأ في تسجيل السحب:", error);
       toast({
         title: "خطأ",
         description: "فشل في تسجيل السحب",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsProcessing(false);
@@ -94,10 +100,12 @@ export const AddWithdrawalModal = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md mx-auto" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-xl text-center">سحب مبلغ من المرتب</DialogTitle>
+          <DialogTitle className="text-xl text-center">
+            سحب مبلغ من المرتب
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -106,7 +114,9 @@ export const AddWithdrawalModal = ({
             <CardContent className="p-4">
               <div className="text-center mb-3">
                 <h3 className="font-semibold text-lg">{employee.name}</h3>
-                <p className="text-sm text-muted-foreground">{employee.position}</p>
+                <p className="text-sm text-muted-foreground">
+                  {employee.position}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -117,15 +127,25 @@ export const AddWithdrawalModal = ({
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <DollarSign className="w-5 h-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">الرصيد الحالي</span>
+                  <span className="text-sm text-muted-foreground">
+                    الرصيد الحالي
+                  </span>
                 </div>
-                <p className={`text-2xl font-bold ${currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {currentBalance >= 0 ? '+' : ''}{currentBalance.toFixed(2)} د.ل
+                <p
+                  className={`text-2xl font-bold ${
+                    currentBalance >= 0 ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {currentBalance >= 0 ? "+" : ""}
+                  {currentBalance.toFixed(2)} د.ل
                 </p>
                 {currentBalance < 0 && (
                   <div className="flex items-center gap-1 mt-2 text-xs text-red-600">
                     <AlertTriangle className="w-3 h-3" />
-                    <span>الرصيد سالب - يمكن السحب حتى {Math.abs(currentBalance) + 1000} د.ل</span>
+                    <span>
+                      الرصيد سالب - يمكن السحب حتى{" "}
+                      {Math.abs(currentBalance) + 1000} د.ل
+                    </span>
                   </div>
                 )}
               </div>
@@ -145,10 +165,12 @@ export const AddWithdrawalModal = ({
                 className="text-center"
                 max={Math.abs(currentBalance) + 1000}
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
-                onClick={() => setAmount((Math.abs(currentBalance) + 100).toString())}
+                onClick={() =>
+                  setAmount((Math.abs(currentBalance) + 100).toString())
+                }
                 className="whitespace-nowrap"
               >
                 اقتراح
@@ -156,7 +178,8 @@ export const AddWithdrawalModal = ({
             </div>
             {amount && parseFloat(amount) > 0 && (
               <p className="text-xs text-muted-foreground text-center">
-                الرصيد بعد السحب: {(currentBalance - parseFloat(amount)).toFixed(2)} د.ل
+                الرصيد بعد السحب:{" "}
+                {(currentBalance - parseFloat(amount)).toFixed(2)} د.ل
               </p>
             )}
           </div>
@@ -175,12 +198,21 @@ export const AddWithdrawalModal = ({
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
               إلغاء
             </Button>
-            <Button 
-              onClick={handleWithdrawal} 
-              disabled={isProcessing || !amount || parseFloat(amount) <= 0 || parseFloat(amount) > Math.abs(currentBalance) + 1000}
+            <Button
+              onClick={handleWithdrawal}
+              disabled={
+                isProcessing ||
+                !amount ||
+                parseFloat(amount) <= 0 ||
+                parseFloat(amount) > Math.abs(currentBalance) + 1000
+              }
               className="flex-1"
             >
               <Minus className="w-4 h-4 ml-2" />

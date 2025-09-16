@@ -7,6 +7,7 @@ import {
   TrendingUp,
   DollarSign,
   Clock,
+  Calculator,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoRedirect } from "@/hooks/useAutoRedirect";
 import { useNavigate } from "react-router-dom";
 import { EmployeeCard } from "@/components/EmployeeCard";
 
@@ -46,6 +48,9 @@ const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Auto redirect after 30 minutes of inactivity
+  useAutoRedirect({ timeoutMinutes: 30, redirectTo: "/", enabled: true });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const { toast } = useToast();
@@ -228,6 +233,15 @@ const Employees = () => {
         employees.length
       : 0;
 
+  // إحصائيات إضافية
+  const totalSalaryBudget = employees.reduce(
+    (sum, emp) => sum + (emp.salary || 0),
+    0
+  );
+  const employeesWithSalary = employees.filter(
+    (emp) => emp.salary && emp.salary > 0
+  ).length;
+
   return (
     <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -253,7 +267,7 @@ const Employees = () => {
         </div>
 
         {/* Stats Cards - Mobile Friendly */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center justify-between">
@@ -325,6 +339,24 @@ const Employees = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs sm:text-sm text-indigo-600 font-medium">
+                    إجمالي ميزانية الرواتب
+                  </p>
+                  <p className="text-lg sm:text-xl font-bold text-indigo-800">
+                    {totalSalaryBudget.toFixed(0)} د.ل
+                  </p>
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-200 rounded-full flex items-center justify-center">
+                  <Calculator className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search */}
@@ -379,7 +411,12 @@ const Employees = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                 {filteredEmployees.map((employee) => (
-                  <EmployeeCard key={employee.id} employee={employee} />
+                  <EmployeeCard
+                    key={employee.id}
+                    employee={employee}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             )}

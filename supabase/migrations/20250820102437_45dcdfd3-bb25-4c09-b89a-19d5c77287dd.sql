@@ -11,6 +11,7 @@ CREATE OR REPLACE FUNCTION calculate_daily_wage()
 RETURNS trigger AS $$
 DECLARE
     employee_wage numeric := 0;
+    wage_multiplier numeric := 1;
 BEGIN
     -- Get employee's daily wage from employee_profiles
     SELECT COALESCE(daily_wage, 0) INTO employee_wage
@@ -26,7 +27,13 @@ BEGIN
     
     -- Set the daily wage earned for present employees
     IF NEW.status = 'present' THEN
-        NEW.daily_wage_earned := employee_wage;
+        -- Check if employee is present in both shifts (morning and evening)
+        -- If both check_in and check_out exist, multiply wage by 2
+        IF NEW.check_in IS NOT NULL AND NEW.check_out IS NOT NULL THEN
+            wage_multiplier := 2;
+        END IF;
+        
+        NEW.daily_wage_earned := employee_wage * wage_multiplier;
     END IF;
     
     RETURN NEW;

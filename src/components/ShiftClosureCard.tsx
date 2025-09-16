@@ -22,7 +22,7 @@ interface ShiftClosureCardProps {
 
 const formatCurrency = (amount: number) => ` د.ل ${amount.toFixed(2)}`; 
 
-const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("ar-LY");
+const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("en-US");
 
 const getShiftTypeText = (type: string) => (type === "morning" ? "صباحية" : "مسائية");
 

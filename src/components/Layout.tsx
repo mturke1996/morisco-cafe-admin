@@ -1,11 +1,18 @@
-
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/AppSidebar';
-import Header from '@/components/Header';
-import { useAuth } from '@/hooks/useAuth';
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import Header from "@/components/Header";
+import { useAuth } from "@/hooks/useAuth";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
+
+  // Session timeout after 24 hours
+  useSessionTimeout({
+    timeoutHours: 24,
+    redirectTo: "/auth",
+    enabled: !!user,
+  });
 
   if (!user) {
     return (

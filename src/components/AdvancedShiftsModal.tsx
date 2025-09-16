@@ -562,7 +562,7 @@ export const AdvancedShiftsModal = ({ isOpen, onClose, employeeId }: AdvancedShi
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                                 <div>
                                   <span className="text-gray-600">التاريخ:</span>
-                                  <div className="font-medium">{new Date(shift.shift_date).toLocaleDateString('ar-LY')}</div>
+                                  <div className="font-medium">{new Date(shift.shift_date).toLocaleDateString('en-US')}</div>
                                 </div>
                                 <div>
                                   <span className="text-gray-600">الوقت:</span>

@@ -682,11 +682,11 @@ export const ProfessionalReportGenerator = ({
                   <strong>الفترة</strong>
                   <span>${new Date(periodStart).toLocaleDateString(
                     "ar-LY"
-                  )} - ${new Date(periodEnd).toLocaleDateString("ar-LY")}</span>
+                  )} - ${new Date(periodEnd).toLocaleDateString("en-US")}</span>
                 </div>
                 <div class="meta-item">
                   <strong>تاريخ الإنشاء</strong>
-                  <span>${new Date().toLocaleDateString("ar-LY")}</span>
+                  <span>${new Date().toLocaleDateString("en-US")}</span>
                 </div>
                 <div class="meta-item">
                   <strong>العملة</strong>
@@ -826,15 +826,15 @@ export const ProfessionalReportGenerator = ({
                           <td>${employee?.name || "غير محدد"}</td>
                           <td>${new Date(
                             payment.payment_date
-                          ).toLocaleDateString("ar-LY")}</td>
+                          ).toLocaleDateString("en-US")}</td>
                           <td>${payment.amount_paid.toFixed(2)} ${
                           location.currency
                         }</td>
                           <td>${new Date(
                             payment.period_start
-                          ).toLocaleDateString("ar-LY")} - ${new Date(
+                          ).toLocaleDateString("en-US")} - ${new Date(
                           payment.period_end
-                        ).toLocaleDateString("ar-LY")}</td>
+                        ).toLocaleDateString("en-US")}</td>
                           <td>${payment.notes || "-"}</td>
                         </tr>
                       `;

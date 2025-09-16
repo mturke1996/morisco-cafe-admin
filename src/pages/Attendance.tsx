@@ -50,6 +50,8 @@ import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AttendanceHistory from "@/components/AttendanceHistory";
+import AttendanceManagementModal from "@/components/AttendanceManagementModal";
+import { useAttendance } from "@/hooks/useAttendance";
 
 interface Employee {
   id: string;
@@ -78,10 +80,12 @@ const AttendanceCard = ({
   record,
   onEdit,
   onViewProfile,
+  onManage,
 }: {
   record: AttendanceRecord;
   onEdit: (record: AttendanceRecord) => void;
   onViewProfile: (id: string) => void;
+  onManage: (record: AttendanceRecord) => void;
 }) => {
   const calculateWorkingHours = (
     checkIn: string | null,
@@ -213,6 +217,15 @@ const AttendanceCard = ({
             <Edit className="w-3 h-3 ml-1" />
             تعديل
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onManage(record)}
+            className="text-xs h-8 bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            <User className="w-3 h-3 ml-1" />
+            إدارة
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -234,6 +247,8 @@ const Attendance = () => {
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(
     null
   );
+  const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
+  const [managingRecord, setManagingRecord] = useState<AttendanceRecord | null>(null);
   const [editFormData, setEditFormData] = useState({
     deduction_amount: "",
     bonus_amount: "",
@@ -485,6 +500,15 @@ const Attendance = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleManageRecord = (record: AttendanceRecord) => {
+    setManagingRecord(record);
+    setIsManagementModalOpen(true);
+  };
+
+  const handleAttendanceUpdated = () => {
+    fetchAttendanceRecords();
   };
 
   const handleViewProfile = (employeeId: string) => {
@@ -1294,6 +1318,7 @@ const Attendance = () => {
                         record={record}
                         onEdit={handleEditRecord}
                         onViewProfile={handleViewProfile}
+                        onManage={handleManageRecord}
                       />
                     ))}
                   </div>
@@ -1424,6 +1449,14 @@ const Attendance = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Attendance Management Modal */}
+        <AttendanceManagementModal
+          open={isManagementModalOpen}
+          onOpenChange={setIsManagementModalOpen}
+          attendanceRecord={managingRecord}
+          onAttendanceUpdated={handleAttendanceUpdated}
+        />
       </div>
     </div>
   );

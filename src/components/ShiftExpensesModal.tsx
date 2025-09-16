@@ -73,7 +73,7 @@ export const ShiftExpensesModal = ({
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("ar-LY");
+    return new Date(dateStr).toLocaleDateString("en-US");
   };
 
   const formatCurrency = (amount: number) => {

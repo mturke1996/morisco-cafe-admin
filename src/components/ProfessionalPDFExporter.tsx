@@ -445,7 +445,7 @@ class ProfessionalPDFExporter {
     }
 
     if (value instanceof Date) {
-      return value.toLocaleDateString("ar-SA");
+      return value.toLocaleDateString("en-US");
     }
 
     return String(value);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,22 +16,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAddExpense } from "@/hooks/useExpenses";
+import { useUpdateExpense } from "@/hooks/useExpenses";
 
-interface AddExpenseModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  expense_date: string;
 }
 
-const AddExpenseModal = ({ open, onOpenChange }: AddExpenseModalProps) => {
+interface EditExpenseModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  expense: Expense | null;
+}
+
+const EditExpenseModal = ({
+  open,
+  onOpenChange,
+  expense,
+}: EditExpenseModalProps) => {
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
     category: "",
-    expense_date: new Date().toISOString().split("T")[0],
+    expense_date: "",
   });
 
-  const addExpense = useAddExpense();
+  const updateExpense = useUpdateExpense();
 
   const categories = [
     "سحوبات شخصية",
@@ -50,15 +63,34 @@ const AddExpenseModal = ({ open, onOpenChange }: AddExpenseModalProps) => {
     "أخرى",
   ];
 
+  // Update form data when expense changes
+  useEffect(() => {
+    if (expense) {
+      setFormData({
+        description: expense.description || "",
+        amount: expense.amount.toString(),
+        category: expense.category || "",
+        expense_date:
+          expense.expense_date || new Date().toISOString().split("T")[0],
+      });
+    }
+  }, [expense]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.description || !formData.amount || !formData.category) {
+    if (
+      !formData.description ||
+      !formData.amount ||
+      !formData.category ||
+      !expense
+    ) {
       return;
     }
 
-    addExpense.mutate(
+    updateExpense.mutate(
       {
+        id: expense.id,
         description: formData.description,
         amount: parseFloat(formData.amount),
         category: formData.category,
@@ -66,12 +98,6 @@ const AddExpenseModal = ({ open, onOpenChange }: AddExpenseModalProps) => {
       },
       {
         onSuccess: () => {
-          setFormData({
-            description: "",
-            amount: "",
-            category: "",
-            expense_date: new Date().toISOString().split("T")[0],
-          });
           onOpenChange(false);
         },
       }
@@ -82,7 +108,7 @@ const AddExpenseModal = ({ open, onOpenChange }: AddExpenseModalProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]" dir="rtl">
         <DialogHeader>
-          <DialogTitle>إضافة مصروف جديد</DialogTitle>
+          <DialogTitle>تعديل المصروف</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -152,9 +178,9 @@ const AddExpenseModal = ({ open, onOpenChange }: AddExpenseModalProps) => {
             <Button
               type="submit"
               className="flex-1"
-              disabled={addExpense.isPending}
+              disabled={updateExpense.isPending}
             >
-              {addExpense.isPending ? "جاري الإضافة..." : "إضافة المصروف"}
+              {updateExpense.isPending ? "جاري التحديث..." : "تحديث المصروف"}
             </Button>
             <Button
               type="button"
@@ -170,4 +196,4 @@ const AddExpenseModal = ({ open, onOpenChange }: AddExpenseModalProps) => {
   );
 };
 
-export default AddExpenseModal;
+export default EditExpenseModal;

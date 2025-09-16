@@ -1,13 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+import { FileText, TrendingUp, BarChart3, Target } from "lucide-react";
 
 interface ExpenseStatsCardsProps {
   stats:
     | {
         today: number;
-        this_week: number;
-        this_month: number;
         total: number;
+        averageDaily: number;
+        mostExpensiveCategory: string;
+        todayCount: number;
       }
     | undefined;
 }
@@ -25,10 +26,13 @@ const ExpenseStatsCards = ({ stats }: ExpenseStatsCardsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-600 text-xs sm:text-sm font-medium">
-                اليوم
+                مصروفات اليوم
               </p>
               <p className="text-xl sm:text-2xl font-bold text-blue-800">
                 {formatCurrency(stats.today)}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {stats.todayCount} مصروف
               </p>
             </div>
             <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
@@ -41,13 +45,16 @@ const ExpenseStatsCards = ({ stats }: ExpenseStatsCardsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-600 text-xs sm:text-sm font-medium">
-                هذا الأسبوع
+                المتوسط اليومي
               </p>
               <p className="text-xl sm:text-2xl font-bold text-green-800">
-                {formatCurrency(stats.this_week)}
+                {formatCurrency(stats.averageDaily)}
+              </p>
+              <p className="text-xs text-green-600 mt-1">
+                آخر 30 يوم
               </p>
             </div>
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+            <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
           </div>
         </CardContent>
       </Card>
@@ -57,13 +64,16 @@ const ExpenseStatsCards = ({ stats }: ExpenseStatsCardsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-600 text-xs sm:text-sm font-medium">
-                هذا الشهر
+                أعلى فئة اليوم
               </p>
-              <p className="text-xl sm:text-2xl font-bold text-orange-800">
-                {formatCurrency(stats.this_month)}
+              <p className="text-sm sm:text-base font-bold text-orange-800 truncate">
+                {stats.mostExpensiveCategory}
+              </p>
+              <p className="text-xs text-orange-600 mt-1">
+                أكثر إنفاقاً
               </p>
             </div>
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
+            <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600" />
           </div>
         </CardContent>
       </Card>
@@ -73,13 +83,16 @@ const ExpenseStatsCards = ({ stats }: ExpenseStatsCardsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-600 text-xs sm:text-sm font-medium">
-                الإجمالي
+                إجمالي المصروفات
               </p>
               <p className="text-xl sm:text-2xl font-bold text-purple-800">
                 {formatCurrency(stats.total)}
               </p>
+              <p className="text-xs text-purple-600 mt-1">
+                منذ البداية
+              </p>
             </div>
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+            <Target className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
           </div>
         </CardContent>
       </Card>

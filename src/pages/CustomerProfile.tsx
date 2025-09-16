@@ -271,7 +271,7 @@ const CustomerProfile = () => {
                               التاريخ:{" "}
                               {new Date(
                                 invoice.invoice_date
-                              ).toLocaleDateString("ar-SA")}
+                              ).toLocaleDateString("en-US")}
                             </span>
                             <span>
                               العناصر: {invoice.invoice_items?.length || 0}
@@ -330,7 +330,7 @@ const CustomerProfile = () => {
                           <span className="text-sm text-muted-foreground">
                             {new Date(
                               reminder.reminder_date
-                            ).toLocaleDateString("ar-SA")}
+                            ).toLocaleDateString("en-US")}
                           </span>
                         </div>
                         <p className="text-sm">{reminder.message}</p>

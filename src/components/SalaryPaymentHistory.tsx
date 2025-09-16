@@ -113,11 +113,11 @@ export const SalaryPaymentHistory = ({ employeeId, employee }: SalaryPaymentHist
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span className="font-medium">
-                    {new Date(payment.payment_date).toLocaleDateString('ar-LY')}
+                    {new Date(payment.payment_date).toLocaleDateString('en-US')}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  الفترة: {new Date(payment.period_start).toLocaleDateString('ar-LY')} - {new Date(payment.period_end).toLocaleDateString('ar-LY')}
+                  الفترة: {new Date(payment.period_start).toLocaleDateString('en-US')} - {new Date(payment.period_end).toLocaleDateString('en-US')}
                 </p>
               </div>
               <Badge variant={payment.payment_status === 'full' ? 'default' : 'secondary'}>

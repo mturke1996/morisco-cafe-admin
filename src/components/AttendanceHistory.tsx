@@ -490,7 +490,7 @@ const AttendanceHistory = () => {
                   </div>
                 </div>
                 <h2 class="report-title">تقرير الحضور والمرتبات</h2>
-                <p class="report-date">من ${new Date(startDate).toLocaleDateString('ar-LY')} إلى ${new Date(endDate).toLocaleDateString('ar-LY')}</p>
+                <p class="report-date">من ${new Date(startDate).toLocaleDateString('en-US')} إلى ${new Date(endDate).toLocaleDateString('en-US')}</p>
               </div>
             </div>
             
@@ -539,7 +539,7 @@ const AttendanceHistory = () => {
                     
                     return `
                       <tr class="table-row">
-                        <td>${new Date(record.date).toLocaleDateString('ar-LY')}</td>
+                        <td>${new Date(record.date).toLocaleDateString('en-US')}</td>
                         <td style="font-weight: 600;">${record.employees?.name || 'غير محدد'}</td>
                         <td>
                           <span class="status-badge ${record.status === 'present' ? 'status-present' : 'status-absent'}">
@@ -566,7 +566,7 @@ const AttendanceHistory = () => {
                 جميع البيانات محفوظة ومؤمنة وفقاً لأعلى معايير الأمان
               </p>
               <div class="generation-date">
-                تم إنشاء هذا التقرير في: ${new Date().toLocaleDateString('ar-LY')} - ${new Date().toLocaleTimeString('ar-LY')}
+                تم إنشاء هذا التقرير في: ${new Date().toLocaleDateString('en-US')} - ${new Date().toLocaleTimeString('en-US')}
               </div>
             </div>
           </div>
@@ -736,7 +736,7 @@ const AttendanceHistory = () => {
                 <CardTitle className="flex items-center justify-between text-lg">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    {new Date(date).toLocaleDateString('ar-LY', {
+                    {new Date(date).toLocaleDateString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',

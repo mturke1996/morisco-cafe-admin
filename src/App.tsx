@@ -1,22 +1,30 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  createBrowserRouter,
+} from "react-router-dom";
+import { useEffect, lazy, Suspense } from "react";
 import { AuthProvider } from "./hooks/useAuth";
 import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import Employees from "./pages/Employees";
-import EmployeeProfile from "./pages/EmployeeProfile";
-import Attendance from "./pages/Attendance";
-import Expenses from "./pages/Expenses";
-import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
-import Customers from "./pages/Customers";
-import CustomerProfile from "./pages/CustomerProfile";
-import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { LoadingSpinner } from "./components/LoadingSpinner";
+
+// Lazy load components for better performance
+const Employees = lazy(() => import("./pages/Employees"));
+const EmployeeProfile = lazy(() => import("./pages/EmployeeProfile"));
+const Attendance = lazy(() => import("./pages/Attendance"));
+const Expenses = lazy(() => import("./pages/Expenses"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Customers = lazy(() => import("./pages/Customers"));
+const CustomerProfile = lazy(() => import("./pages/CustomerProfile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -42,7 +50,9 @@ const App = () => {
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <BrowserRouter>
+          <BrowserRouter
+            future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+          >
             <Routes>
               <Route path="/auth" element={<Login />} />
               <Route
@@ -62,7 +72,13 @@ const App = () => {
                         path="/employees"
                         element={
                           <ProtectedRoute>
-                            <Employees />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <Employees />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
@@ -70,7 +86,13 @@ const App = () => {
                         path="/employees/:employeeId"
                         element={
                           <ProtectedRoute>
-                            <EmployeeProfile />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <EmployeeProfile />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
@@ -78,7 +100,13 @@ const App = () => {
                         path="/attendance"
                         element={
                           <ProtectedRoute>
-                            <Attendance />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <Attendance />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
@@ -86,7 +114,13 @@ const App = () => {
                         path="/expenses"
                         element={
                           <ProtectedRoute>
-                            <Expenses />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <Expenses />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
@@ -94,7 +128,13 @@ const App = () => {
                         path="/reports"
                         element={
                           <ProtectedRoute>
-                            <Reports />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <Reports />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
@@ -102,7 +142,13 @@ const App = () => {
                         path="/settings"
                         element={
                           <ProtectedRoute>
-                            <Settings />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <Settings />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
@@ -110,7 +156,13 @@ const App = () => {
                         path="/customers"
                         element={
                           <ProtectedRoute>
-                            <Customers />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <Customers />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
@@ -118,11 +170,30 @@ const App = () => {
                         path="/customer/:customerId"
                         element={
                           <ProtectedRoute>
-                            <CustomerProfile />
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <CustomerProfile />
+                            </Suspense>
                           </ProtectedRoute>
                         }
                       />
-                      <Route path="*" element={<NotFound />} />
+                      <Route
+                        path="*"
+                        element={
+                          <Suspense
+                            fallback={
+                              <div className="flex items-center justify-center h-64">
+                                جاري التحميل...
+                              </div>
+                            }
+                          >
+                            <NotFound />
+                          </Suspense>
+                        }
+                      />
                     </Routes>
                   </Layout>
                 }
