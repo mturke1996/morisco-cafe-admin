@@ -1,15 +1,22 @@
 import { useState } from "react";
-import { Users, Plus, Search } from "lucide-react";
+import { Users, Plus, Search, Check, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCustomers, useCustomerStats } from "@/hooks/useCustomers";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  useCustomers,
+  useCustomerStats,
+  useDeleteCustomer,
+} from "@/hooks/useCustomers";
 import CustomerStatsCards from "@/components/CustomerStatsCards";
 import CustomerCard from "@/components/CustomerCard";
 import AddCustomerModal from "@/components/AddCustomerModal";
 import AddDebtModal from "@/components/AddDebtModal";
 import PayDebtModal from "@/components/PayDebtModal";
+import DeleteCustomerModal from "@/components/DeleteCustomerModal";
 
 const Customers = () => {
   const navigate = useNavigate();
@@ -17,6 +24,8 @@ const Customers = () => {
   const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
   const [isAddDebtModalOpen, setIsAddDebtModalOpen] = useState(false);
   const [isPayDebtModalOpen, setIsPayDebtModalOpen] = useState(false);
+  const [isDeleteCustomerModalOpen, setIsDeleteCustomerModalOpen] =
+    useState(false);
   type CustomerDebt = {
     id: string;
     amount: number;
@@ -44,7 +53,7 @@ const Customers = () => {
   const { data: customers = [], isLoading: customersLoading } = useCustomers();
   const { data: stats, isLoading: statsLoading } = useCustomerStats();
 
-  // Filter customers based on search
+  // Filter and categorize customers
   const filteredCustomers =
     customers?.filter(
       (customer) =>
@@ -52,6 +61,17 @@ const Customers = () => {
         customer.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
+
+  // Separate customers into categories
+  const customersWithDebt = filteredCustomers.filter(
+    (customer) => customer.remaining_debt > 0
+  );
+  const customersWithoutDebt = filteredCustomers.filter(
+    (customer) => customer.remaining_debt <= 0 && customer.total_debt > 0
+  );
+  const newCustomers = filteredCustomers.filter(
+    (customer) => customer.total_debt === 0
+  );
 
   const handleAddDebt = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -65,6 +85,11 @@ const Customers = () => {
 
   const handleViewProfile = (customerId: string) => {
     navigate(`/customer/${customerId}`);
+  };
+
+  const handleDeleteCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDeleteCustomerModalOpen(true);
   };
 
   return (
@@ -112,8 +137,45 @@ const Customers = () => {
           </CardContent>
         </Card>
 
-        {/* Customers List */}
-        <div className="space-y-3 sm:space-y-4">
+        {/* Customers Tabs */}
+        <Tabs defaultValue="with-debt" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-white/90 backdrop-blur-sm h-12 sm:h-14">
+            <TabsTrigger
+              value="with-debt"
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4"
+            >
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">عليهم ديون</span>
+              <span className="sm:hidden">ديون</span>
+              <Badge variant="destructive" className="text-xs">
+                {customersWithDebt.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger
+              value="paid"
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4"
+            >
+              <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">دفعوا دينهم</span>
+              <span className="sm:hidden">مدفوع</span>
+              <Badge variant="default" className="text-xs bg-green-600">
+                {customersWithoutDebt.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger
+              value="new"
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4"
+            >
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">عملاء جدد</span>
+              <span className="sm:hidden">جدد</span>
+              <Badge variant="secondary" className="text-xs">
+                {newCustomers.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Loading State */}
           {customersLoading ? (
             <div className="grid grid-cols-1 gap-3 sm:gap-4">
               {[1, 2, 3].map((i) => (
@@ -135,38 +197,111 @@ const Customers = () => {
                 </Card>
               ))}
             </div>
-          ) : filteredCustomers.length === 0 ? (
-            <Card className="bg-white/90 backdrop-blur-sm">
-              <CardContent className="text-center py-12 sm:py-16">
-                <Users className="w-16 h-16 sm:w-20 sm:h-20 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground text-lg mb-4">
-                  {searchTerm ? "لا توجد نتائج للبحث" : "لا يوجد عملاء"}
-                </p>
-                {!searchTerm && (
-                  <Button
-                    onClick={() => setIsAddCustomerModalOpen(true)}
-                    className="btn-gradient"
-                  >
-                    <Plus className="w-4 h-4 ml-2" />
-                    إضافة عميل جديد
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:gap-4">
-              {filteredCustomers.map((customer) => (
-                <CustomerCard
-                  key={customer.id}
-                  customer={customer}
-                  onViewProfile={handleViewProfile}
-                  onAddDebt={handleAddDebt}
-                  onPayDebt={handlePayDebt}
-                />
-              ))}
-            </div>
+            <>
+              {/* Customers with Debt */}
+              <TabsContent value="with-debt" className="space-y-3 sm:space-y-4">
+                {customersWithDebt.length === 0 ? (
+                  <Card className="bg-white/90 backdrop-blur-sm">
+                    <CardContent className="text-center py-12 sm:py-16">
+                      <Clock className="w-16 h-16 sm:w-20 sm:h-20 text-green-500 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg sm:text-xl font-semibold text-muted-foreground mb-2">
+                        لا توجد ديون معلقة
+                      </h3>
+                      <p className="text-muted-foreground">
+                        جميع العملاء دفعوا ديونهم أو لا توجد ديون مسجلة
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                    {customersWithDebt.map((customer) => (
+                      <CustomerCard
+                        key={customer.id}
+                        customer={customer}
+                        onViewProfile={handleViewProfile}
+                        onAddDebt={handleAddDebt}
+                        onPayDebt={handlePayDebt}
+                        onDeleteCustomer={handleDeleteCustomer}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Customers who paid their debt */}
+              <TabsContent value="paid" className="space-y-3 sm:space-y-4">
+                {customersWithoutDebt.length === 0 ? (
+                  <Card className="bg-white/90 backdrop-blur-sm">
+                    <CardContent className="text-center py-12 sm:py-16">
+                      <Check className="w-16 h-16 sm:w-20 sm:h-20 text-blue-500 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg sm:text-xl font-semibold text-muted-foreground mb-2">
+                        لا توجد عملاء دفعوا ديونهم
+                      </h3>
+                      <p className="text-muted-foreground">
+                        لا يوجد عملاء قاموا بدفع ديونهم بالكامل
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                    {customersWithoutDebt.map((customer) => (
+                      <CustomerCard
+                        key={customer.id}
+                        customer={customer}
+                        onViewProfile={handleViewProfile}
+                        onAddDebt={handleAddDebt}
+                        onPayDebt={handlePayDebt}
+                        onDeleteCustomer={handleDeleteCustomer}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* New customers */}
+              <TabsContent value="new" className="space-y-3 sm:space-y-4">
+                {newCustomers.length === 0 ? (
+                  <Card className="bg-white/90 backdrop-blur-sm">
+                    <CardContent className="text-center py-12 sm:py-16">
+                      <Users className="w-16 h-16 sm:w-20 sm:h-20 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg sm:text-xl font-semibold text-muted-foreground mb-2">
+                        لا توجد عملاء جدد
+                      </h3>
+                      <p className="text-muted-foreground mb-6">
+                        {searchTerm
+                          ? "لم يتم العثور على عملاء جدد مطابقين للبحث"
+                          : "ابدأ بإضافة العملاء الجدد"}
+                      </p>
+                      {!searchTerm && (
+                        <Button
+                          onClick={() => setIsAddCustomerModalOpen(true)}
+                          className="btn-gradient"
+                        >
+                          <Plus className="w-4 h-4 ml-2" />
+                          إضافة أول عميل
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                    {newCustomers.map((customer) => (
+                      <CustomerCard
+                        key={customer.id}
+                        customer={customer}
+                        onViewProfile={handleViewProfile}
+                        onAddDebt={handleAddDebt}
+                        onPayDebt={handlePayDebt}
+                        onDeleteCustomer={handleDeleteCustomer}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </>
           )}
-        </div>
+        </Tabs>
 
         {/* Modals */}
         <AddCustomerModal
@@ -184,6 +319,12 @@ const Customers = () => {
           open={isPayDebtModalOpen}
           onOpenChange={setIsPayDebtModalOpen}
           debt={selectedDebt}
+        />
+
+        <DeleteCustomerModal
+          open={isDeleteCustomerModalOpen}
+          onOpenChange={setIsDeleteCustomerModalOpen}
+          customer={selectedCustomer}
         />
       </div>
     </div>

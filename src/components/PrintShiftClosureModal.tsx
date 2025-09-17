@@ -23,7 +23,7 @@ const PrintShiftClosureModal = ({
 
   const formatCurrency = (amount: number) => `${amount.toFixed(2)} د.ل`;
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString("en-GB");
+    new Date(dateStr).toLocaleDateString("en-US");
   const unit = " د.ل";
 
   const handlePrint = () => {

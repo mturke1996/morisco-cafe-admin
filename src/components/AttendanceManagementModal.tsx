@@ -16,7 +16,7 @@ import {
   useDeleteAttendance,
   useUpdateAttendance,
 } from "@/hooks/useAttendance";
-import WithdrawalManagementModal from "./WithdrawalManagementModal";
+import EnhancedWithdrawalManagementModal from "./EnhancedWithdrawalManagementModal";
 
 interface AttendanceRecord {
   id: string;
@@ -57,7 +57,7 @@ const AttendanceManagementModal = ({
   const updateAttendance = useUpdateAttendance();
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString("ar-SA", {
+    return new Date(timestamp).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -337,14 +337,13 @@ const AttendanceManagementModal = ({
         </DialogContent>
       </Dialog>
 
-      {/* Withdrawal Management Modal */}
-      <WithdrawalManagementModal
+      {/* Enhanced Withdrawal Management Modal */}
+      <EnhancedWithdrawalManagementModal
         open={isWithdrawalModalOpen}
         onOpenChange={setIsWithdrawalModalOpen}
         employeeId={attendanceRecord.employees.id}
         employeeName={attendanceRecord.employees.name}
         currentBalance={attendanceRecord.employees.salary || 0} // Using salary as base balance
-        selectedDate={new Date().toISOString().split("T")[0]}
       />
     </>
   );

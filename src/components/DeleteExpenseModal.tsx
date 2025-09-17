@@ -69,7 +69,7 @@ const DeleteExpenseModal = ({
               </div>
               <p className="text-gray-700">{expense.description}</p>
               <p className="text-sm text-gray-500">
-                {new Date(expense.expense_date).toLocaleDateString("en-GB")}
+                {new Date(expense.expense_date).toLocaleDateString("en-US")}
               </p>
             </div>
           </div>

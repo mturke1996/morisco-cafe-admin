@@ -23,6 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { useEmployeeBalance } from "@/hooks/useEmployeeFinancials";
 import EmployeeWithdrawalModal from "./EmployeeWithdrawalModal";
 import EmployeeSalaryPaymentModal from "./EmployeeSalaryPaymentModal";
+import QuickWithdrawalButton from "./QuickWithdrawalButton";
 
 interface Employee {
   id: string;
@@ -252,6 +253,20 @@ export const EmployeeCard = ({
               <CreditCard className="w-3 h-3 ml-1" />
               دفع المرتب
             </Button>
+          </div>
+
+          {/* Quick Withdrawal Button */}
+          <div className="mt-2">
+            <QuickWithdrawalButton
+              employeeId={employee.id}
+              employeeName={employee.name}
+              currentBalance={currentBalance}
+              onWithdrawalComplete={() => {
+                // يمكن إضافة تحديث البيانات هنا إذا لزم الأمر
+              }}
+              size="sm"
+              className="w-full text-xs h-8"
+            />
           </div>
 
           {/* Delete Button */}

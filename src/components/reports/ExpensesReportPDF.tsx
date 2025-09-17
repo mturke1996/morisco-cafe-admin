@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import { brand } from "@/lib/brand";
 
 interface ExpenseDetail {
@@ -31,12 +30,15 @@ interface ExpensesReportPDFProps {
   };
 }
 
-export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFProps) => {
-  const reportWindow = window.open('', '_blank');
+export const generateExpensesReportPDF = ({
+  data,
+  config,
+}: ExpensesReportPDFProps) => {
+  const reportWindow = window.open("", "_blank");
   if (!reportWindow) return;
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-GB');
+    return new Date(dateStr).toLocaleDateString("en-US");
   };
 
   const formatCurrency = (amount: number) => {
@@ -45,11 +47,18 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
 
   const getPeriodText = () => {
     switch (config.dateRange) {
-      case 'daily': return 'تقرير يومي';
-      case 'weekly': return 'تقرير أسبوعي';
-      case 'monthly': return 'تقرير شهري';
-      case 'custom': return `من ${formatDate(config.startDate)} إلى ${formatDate(config.endDate)}`;
-      default: return 'تقرير المصروفات';
+      case "daily":
+        return "تقرير يومي";
+      case "weekly":
+        return "تقرير أسبوعي";
+      case "monthly":
+        return "تقرير شهري";
+      case "custom":
+        return `من ${formatDate(config.startDate)} إلى ${formatDate(
+          config.endDate
+        )}`;
+      default:
+        return "تقرير المصروفات";
     }
   };
 
@@ -70,7 +79,11 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
             
             .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; }
             
-            .header { background: linear-gradient(135deg, ${brand.primaryColor}, ${brand.secondaryColor}); color: white; padding: 28px; text-align: center; position: relative; display: flex; align-items: center; justify-content: space-between; }
+            .header { background: linear-gradient(135deg, ${
+              brand.primaryColor
+            }, ${
+    brand.secondaryColor
+  }); color: white; padding: 28px; text-align: center; position: relative; display: flex; align-items: center; justify-content: space-between; }
             .brand { display:flex; align-items:center; gap:12px; }
             .logo { width: 56px; height: 56px; border-radius: 12px; background: rgba(255,255,255,0.15); display:grid; place-items:center; overflow:hidden; border:1px solid rgba(255,255,255,0.25); }
             .logo img { width:100%; height:100%; object-fit:cover; }
@@ -140,7 +153,9 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
                 background: linear-gradient(90deg, #e74c3c, #f39c12, #e67e22);
             }
             
-            .stat-value { font-size: 2rem; font-weight: bold; color: ${brand.primaryColor}; margin-bottom: 8px; }
+            .stat-value { font-size: 2rem; font-weight: bold; color: ${
+              brand.primaryColor
+            }; margin-bottom: 8px; }
             
             .stat-label {
                 color: #666;
@@ -248,7 +263,9 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
         <div class="container">
             <div class="header">
                 <div class="brand">
-                  <div class="logo"><img src="${brand.logoUrl}" onerror="this.style.display='none'" /></div>
+                  <div class="logo"><img src="${
+                    brand.logoUrl
+                  }" onerror="this.style.display='none'" /></div>
                   <div class="company">${brand.companyName}</div>
                 </div>
                 <div class="report-title">تقرير المصروفات<br/><small>${getPeriodText()}</small></div>
@@ -256,7 +273,9 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value">${formatCurrency(data.stats.total_amount)}</div>
+                    <div class="stat-value">${formatCurrency(
+                      data.stats.total_amount
+                    )}</div>
                     <div class="stat-label">إجمالي المصروفات</div>
                 </div>
                 <div class="stat-card">
@@ -264,11 +283,19 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
                     <div class="stat-label">عدد المصروفات</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${data.stats.by_category.length}</div>
+                    <div class="stat-value">${
+                      data.stats.by_category.length
+                    }</div>
                     <div class="stat-label">عدد الفئات</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${data.stats.total_amount > 0 ? (data.stats.total_amount / data.details.length).toFixed(2) : '0.00'} د.ل</div>
+                    <div class="stat-value">${
+                      data.stats.total_amount > 0
+                        ? (
+                            data.stats.total_amount / data.details.length
+                          ).toFixed(2)
+                        : "0.00"
+                    } د.ل</div>
                     <div class="stat-label">متوسط المصروف</div>
                 </div>
             </div>
@@ -276,13 +303,23 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
             <div class="content">
                 <h2 class="section-title">التوزيع حسب الفئات</h2>
                 <div class="category-grid">
-                    ${data.stats.by_category.map(category => `
+                    ${data.stats.by_category
+                      .map(
+                        (category) => `
                         <div class="category-card">
-                            <div class="category-name">${category.category}</div>
-                            <div class="category-amount">${formatCurrency(category.amount)}</div>
-                            <div class="category-count">${category.count} مصروف</div>
+                            <div class="category-name">${
+                              category.category
+                            }</div>
+                            <div class="category-amount">${formatCurrency(
+                              category.amount
+                            )}</div>
+                            <div class="category-count">${
+                              category.count
+                            } مصروف</div>
                         </div>
-                    `).join('')}
+                    `
+                      )
+                      .join("")}
                 </div>
                 
                 <h2 class="section-title">تفاصيل المصروفات</h2>
@@ -296,19 +333,27 @@ export const generateExpensesReportPDF = ({ data, config }: ExpensesReportPDFPro
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.details.map(expense => `
+                        ${data.details
+                          .map(
+                            (expense) => `
                             <tr>
                                 <td>${formatDate(expense.expense_date)}</td>
                                 <td>${expense.description}</td>
                                 <td>${expense.category}</td>
-                                <td class="amount-cell">${formatCurrency(expense.amount)}</td>
+                                <td class="amount-cell">${formatCurrency(
+                                  expense.amount
+                                )}</td>
                             </tr>
-                        `).join('')}
+                        `
+                          )
+                          .join("")}
                     </tbody>
                 </table>
             </div>
             
-            <div class="footer">تم إنشاء هذا التقرير في ${formatDate(new Date().toISOString().split('T')[0])} - ${brand.companyName}</div>
+            <div class="footer">تم إنشاء هذا التقرير في ${formatDate(
+              new Date().toISOString().split("T")[0]
+            )} - ${brand.companyName}</div>
         </div>
         
         <script>

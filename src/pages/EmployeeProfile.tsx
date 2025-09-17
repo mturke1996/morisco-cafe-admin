@@ -42,7 +42,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutoRedirect } from "@/hooks/useAutoRedirect";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmployeeBalance } from "@/hooks/useEmployeeFinancials";
-import EmployeeWithdrawalModal from "@/components/EmployeeWithdrawalModal";
+import EnhancedWithdrawalManagementModal from "@/components/EnhancedWithdrawalManagementModal";
+import WithdrawalHistoryCard from "@/components/WithdrawalHistoryCard";
 import EmployeeSalaryPaymentModal from "@/components/EmployeeSalaryPaymentModal";
 import { EditEmployeeModal } from "@/components/EditEmployeeModal";
 
@@ -658,49 +659,12 @@ const EmployeeProfile = () => {
         {/* History Tab */}
         {activeTab === "history" && (
           <div className="space-y-4 sm:space-y-6">
-            {/* Withdrawal History */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Minus className="w-5 h-5" />
-                  سجل السحوبات
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {withdrawalHistory.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Minus className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>لا توجد سحوبات</p>
-                    </div>
-                  ) : (
-                    withdrawalHistory.map((withdrawal: any) => (
-                      <div
-                        key={withdrawal.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                            <Minus className="w-4 h-4 text-red-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">
-                              {formatDate(withdrawal.withdrawal_date)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {withdrawal.notes || "بدون ملاحظات"}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="font-bold text-red-600">
-                          {formatCurrency(withdrawal.amount)}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Enhanced Withdrawal History */}
+            <WithdrawalHistoryCard
+              employeeId={employee.id}
+              employeeName={employee.name}
+              currentBalance={currentBalance}
+            />
 
             {/* Salary History */}
             <Card>
@@ -750,7 +714,7 @@ const EmployeeProfile = () => {
       </div>
 
       {/* Modals */}
-      <EmployeeWithdrawalModal
+      <EnhancedWithdrawalManagementModal
         open={isWithdrawalModalOpen}
         onOpenChange={setIsWithdrawalModalOpen}
         employeeId={employee.id}

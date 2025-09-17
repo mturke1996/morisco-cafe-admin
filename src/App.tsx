@@ -24,6 +24,7 @@ const Reports = lazy(() => import("./pages/Reports"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Customers = lazy(() => import("./pages/Customers"));
 const CustomerProfile = lazy(() => import("./pages/CustomerProfile"));
+const MenuManagement = lazy(() => import("./pages/UltimateMenuManagement"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -176,6 +177,20 @@ const App = () => {
                               }
                             >
                               <CustomerProfile />
+                            </Suspense>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/menu"
+                        element={
+                          <ProtectedRoute>
+                            <Suspense
+                              fallback={
+                                <LoadingSpinner size="lg" className="h-64" />
+                              }
+                            >
+                              <MenuManagement />
                             </Suspense>
                           </ProtectedRoute>
                         }

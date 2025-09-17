@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutoRedirect } from "@/hooks/useAutoRedirect";
 import { useNavigate } from "react-router-dom";
 import { EmployeeCard } from "@/components/EmployeeCard";
+import QuickWithdrawalButton from "@/components/QuickWithdrawalButton";
 
 interface Employee {
   id: string;

@@ -40,6 +40,7 @@ import {
   ArrowDown,
   Eye,
   RefreshCw,
+  Menu,
 } from "lucide-react";
 
 const Index = () => {
@@ -335,6 +336,19 @@ const Index = () => {
       shadowColor: "shadow-emerald-200/50",
       iconBg: "bg-gradient-to-br from-emerald-100 to-emerald-200",
       hoverEffect: "hover:shadow-emerald-300/30",
+    },
+    {
+      title: "إدارة القائمة",
+      description: "إدارة قائمة الطعام والمشروبات",
+      icon: Menu,
+      path: "/menu",
+      gradient: "from-green-500 via-green-600 to-green-700",
+      bgColor: "bg-gradient-to-br from-green-50 via-green-100 to-green-200",
+      iconColor: "text-green-600",
+      borderColor: "border-green-300",
+      shadowColor: "shadow-green-200/50",
+      iconBg: "bg-gradient-to-br from-green-100 to-green-200",
+      hoverEffect: "hover:shadow-green-300/30",
     },
     {
       title: "المصروفات",

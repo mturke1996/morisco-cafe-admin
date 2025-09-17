@@ -202,9 +202,9 @@ export const generateDebtsReportPDF = ({ data, config }: DebtsReportData) => {
           </div>
           <div class="title">تقرير الديون<br/><small>${new Date(
             config.startDate
-          ).toLocaleDateString("en-GB")} - ${new Date(
+          ).toLocaleDateString("en-US")} - ${new Date(
     config.endDate
-  ).toLocaleDateString("en-GB")}</small></div>
+  ).toLocaleDateString("en-US")}</small></div>
         </div>
         
         <div class="report-body">

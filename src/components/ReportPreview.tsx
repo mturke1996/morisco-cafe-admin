@@ -62,7 +62,7 @@ export const ReportPreview = ({
   };
 
   const formatNumber = (num: number) => {
-    return num.toLocaleString("ar-SA");
+    return num.toLocaleString("en-US");
   };
 
   const getStatusColor = (value: number, isPositive: boolean = true) => {

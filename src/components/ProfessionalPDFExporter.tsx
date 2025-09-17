@@ -165,7 +165,7 @@ class ProfessionalPDFExporter {
     // Add report date and time
     this.doc.setFontSize(10);
     this.doc.setTextColor(120, 120, 120);
-    const currentDateTime = new Date().toLocaleString("ar-SA");
+    const currentDateTime = new Date().toLocaleString("en-US");
     this.doc.text(`تاريخ ووقت التقرير: ${currentDateTime}`, this.pageWidth / 2, this.currentY, {
       align: "center",
     });
@@ -214,7 +214,7 @@ class ProfessionalPDFExporter {
       this.doc.setFont("helvetica", "bold");
       this.doc.setTextColor(41, 128, 185);
       const formattedValue = typeof value === "number" ? 
-        value.toLocaleString("ar-SA") : String(value);
+        value.toLocaleString("en-US") : String(value);
       this.doc.text(formattedValue, cardX + cardWidth / 2, this.currentY + 18, {
         align: "center",
       });
@@ -441,7 +441,7 @@ class ProfessionalPDFExporter {
     }
 
     if (typeof value === "number") {
-      return value.toLocaleString("ar-SA");
+      return value.toLocaleString("en-US");
     }
 
     if (value instanceof Date) {

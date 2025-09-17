@@ -25,6 +25,9 @@ const DeleteCustomerModal = ({ open, onOpenChange, customer }: DeleteCustomerMod
       onSuccess: () => {
         onOpenChange(false);
       },
+      onError: (error) => {
+        console.error("Error deleting customer:", error);
+      },
     });
   };
 

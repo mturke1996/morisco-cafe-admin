@@ -183,7 +183,7 @@ const CustomerProfile = () => {
                             <span>
                               التاريخ:{" "}
                               {new Date(debt.created_at).toLocaleDateString(
-                                "ar-SA"
+                                "en-US"
                               )}
                             </span>
                             {debt.paid_amount > 0 && (

@@ -1,4 +1,3 @@
-
 import { brand } from "@/lib/brand";
 
 interface Employee {
@@ -31,8 +30,11 @@ interface InvoiceProps {
   paymentData: PaymentData;
 }
 
-export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps) => {
-  const printWindow = window.open('', '_blank');
+export const generateSalaryInvoicePDF = ({
+  employee,
+  paymentData,
+}: InvoiceProps) => {
+  const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
   const invoiceHTML = `
@@ -54,7 +56,11 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
         
         .invoice-container { max-width: 900px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; position: relative; }
         
-        .invoice-header { background: linear-gradient(135deg, ${brand.primaryColor}, ${brand.secondaryColor}); color: white; padding: 28px; text-align: center; position: relative; display:flex; align-items:center; justify-content:space-between; }
+        .invoice-header { background: linear-gradient(135deg, ${
+          brand.primaryColor
+        }, ${
+    brand.secondaryColor
+  }); color: white; padding: 28px; text-align: center; position: relative; display:flex; align-items:center; justify-content:space-between; }
         
         .header-pattern {
           position: absolute;
@@ -104,7 +110,9 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
         
         .meta-section { background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; }
         
-        .meta-title { font-size: 16px; font-weight: 700; color: ${brand.primaryColor}; margin-bottom: 12px; display:flex; align-items:center; gap:8px; }
+        .meta-title { font-size: 16px; font-weight: 700; color: ${
+          brand.primaryColor
+        }; margin-bottom: 12px; display:flex; align-items:center; gap:8px; }
         
         .meta-content p {
           margin-bottom: 8px;
@@ -151,7 +159,9 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
           z-index: 2;
         }
         
-        .breakdown-item:last-child { border-bottom: none; padding-top: 20px; margin-top: 15px; border-top: 2px solid ${brand.primaryColor}; font-weight: 700; font-size: 18px; color: #1e293b; }
+        .breakdown-item:last-child { border-bottom: none; padding-top: 20px; margin-top: 15px; border-top: 2px solid ${
+          brand.primaryColor
+        }; font-weight: 700; font-size: 18px; color: #1e293b; }
         
         .amount {
           font-weight: 600;
@@ -227,7 +237,9 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
         <div class="invoice-header">
           <div class="header-pattern"></div>
           <div class="brand">
-            <div class="logo"><img src="${brand.logoUrl}" onerror="this.style.display='none'"/></div>
+            <div class="logo"><img src="${
+              brand.logoUrl
+            }" onerror="this.style.display='none'"/></div>
             <div class="company-name">${brand.companyName}</div>
           </div>
           <div class="invoice-title">فاتورة دفع راتب</div>
@@ -242,8 +254,16 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
               <div class="meta-content">
                 <p><strong>الاسم:</strong> ${employee.name}</p>
                 <p><strong>المنصب:</strong> ${employee.position}</p>
-                ${employee.phone ? `<p><strong>الهاتف:</strong> ${employee.phone}</p>` : ''}
-                ${employee.email ? `<p><strong>البريد:</strong> ${employee.email}</p>` : ''}
+                ${
+                  employee.phone
+                    ? `<p><strong>الهاتف:</strong> ${employee.phone}</p>`
+                    : ""
+                }
+                ${
+                  employee.email
+                    ? `<p><strong>البريد:</strong> ${employee.email}</p>`
+                    : ""
+                }
               </div>
             </div>
             
@@ -252,11 +272,21 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
                 📅 تفاصيل الفترة
               </div>
               <div class="meta-content">
-                <p><strong>تاريخ الدفع:</strong> ${new Date(paymentData.payment_date).toLocaleDateString('en-GB')}</p>
-                <p><strong>من:</strong> ${new Date(paymentData.period_start).toLocaleDateString('en-GB')}</p>
-                <p><strong>إلى:</strong> ${new Date(paymentData.period_end).toLocaleDateString('en-GB')}</p>
-                <p><strong>أيام العمل:</strong> ${paymentData.days_worked} يوم</p>
-                <p><strong>اليومية:</strong> ${paymentData.daily_wage.toFixed(2)} د.ل</p>
+                <p><strong>تاريخ الدفع:</strong> ${new Date(
+                  paymentData.payment_date
+                ).toLocaleDateString("en-US")}</p>
+                <p><strong>من:</strong> ${new Date(
+                  paymentData.period_start
+                ).toLocaleDateString("en-US")}</p>
+                <p><strong>إلى:</strong> ${new Date(
+                  paymentData.period_end
+                ).toLocaleDateString("en-US")}</p>
+                <p><strong>أيام العمل:</strong> ${
+                  paymentData.days_worked
+                } يوم</p>
+                <p><strong>اليومية:</strong> ${paymentData.daily_wage.toFixed(
+                  2
+                )} د.ل</p>
               </div>
             </div>
           </div>
@@ -266,27 +296,45 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
             <div class="breakdown-title">تفصيل الراتب</div>
             
             <div class="breakdown-item">
-              <span>إجمالي اليوميات (${paymentData.days_worked} × ${paymentData.daily_wage.toFixed(2)})</span>
-              <span class="amount positive">+${paymentData.gross_amount.toFixed(2)} د.ل</span>
+              <span>إجمالي اليوميات (${
+                paymentData.days_worked
+              } × ${paymentData.daily_wage.toFixed(2)})</span>
+              <span class="amount positive">+${paymentData.gross_amount.toFixed(
+                2
+              )} د.ل</span>
             </div>
             
-            ${paymentData.total_bonuses > 0 ? `
+            ${
+              paymentData.total_bonuses > 0
+                ? `
             <div class="breakdown-item">
               <span>المكافآت والحوافز</span>
-              <span class="amount positive">+${paymentData.total_bonuses.toFixed(2)} د.ل</span>
+              <span class="amount positive">+${paymentData.total_bonuses.toFixed(
+                2
+              )} د.ل</span>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             
-            ${paymentData.total_deductions > 0 ? `
+            ${
+              paymentData.total_deductions > 0
+                ? `
             <div class="breakdown-item">
               <span>الخصومات</span>
-              <span class="amount negative">-${paymentData.total_deductions.toFixed(2)} د.ل</span>
+              <span class="amount negative">-${paymentData.total_deductions.toFixed(
+                2
+              )} د.ل</span>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             
             <div class="breakdown-item">
               <span>صافي المستحق</span>
-              <span class="amount total">${paymentData.net_amount.toFixed(2)} د.ل</span>
+              <span class="amount total">${paymentData.net_amount.toFixed(
+                2
+              )} د.ل</span>
             </div>
           </div>
           
@@ -296,36 +344,58 @@ export const generateSalaryInvoicePDF = ({ employee, paymentData }: InvoiceProps
                 💰 تفاصيل الدفع
               </div>
               <div class="meta-content">
-                <p><strong>المبلغ المدفوع:</strong> ${paymentData.amount_paid.toFixed(2)} د.ل</p>
-                <p><strong>المتبقي:</strong> ${paymentData.remaining_balance.toFixed(2)} د.ل</p>
-                <p><strong>رقم الفاتورة:</strong> #${paymentData.id.substring(0, 8).toUpperCase()}</p>
+                <p><strong>المبلغ المدفوع:</strong> ${paymentData.amount_paid.toFixed(
+                  2
+                )} د.ل</p>
+                <p><strong>المتبقي:</strong> ${paymentData.remaining_balance.toFixed(
+                  2
+                )} د.ل</p>
+                <p><strong>رقم الفاتورة:</strong> #${paymentData.id
+                  .substring(0, 8)
+                  .toUpperCase()}</p>
               </div>
             </div>
             
             <div class="meta-section">
               <div class="payment-status">
-                <div class="status-badge ${paymentData.payment_status === 'full' ? 'status-full' : 'status-partial'}">
-                  ${paymentData.payment_status === 'full' ? 'مدفوع بالكامل' : 'دفع جزئي'}
+                <div class="status-badge ${
+                  paymentData.payment_status === "full"
+                    ? "status-full"
+                    : "status-partial"
+                }">
+                  ${
+                    paymentData.payment_status === "full"
+                      ? "مدفوع بالكامل"
+                      : "دفع جزئي"
+                  }
                 </div>
               </div>
             </div>
           </div>
           
-          ${paymentData.notes ? `
+          ${
+            paymentData.notes
+              ? `
           <div class="meta-section" style="margin-top: 20px;">
             <div class="meta-title">📝 ملاحظات</div>
             <div class="meta-content">
               <p>${paymentData.notes}</p>
             </div>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
         </div>
         
         <div class="invoice-footer">
           <div class="footer-note">
-            تم إنشاء هذه الفاتورة آلياً في ${new Date().toLocaleDateString('en-GB')} الساعة ${new Date().toLocaleTimeString('en-GB')}
+            تم إنشاء هذه الفاتورة آلياً في ${new Date().toLocaleDateString(
+              "en-US"
+            )} الساعة ${new Date().toLocaleTimeString("en-US")}
           </div>
-          <div class="footer-signature">${brand.companyName} - إدارة الموارد البشرية</div>
+          <div class="footer-signature">${
+            brand.companyName
+          } - إدارة الموارد البشرية</div>
         </div>
       </div>
       

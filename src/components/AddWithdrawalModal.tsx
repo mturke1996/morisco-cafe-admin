@@ -25,6 +25,12 @@ interface AddWithdrawalModalProps {
   currentBalance: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onWithdrawalComplete?: (withdrawalData: {
+    amount: number;
+    withdrawal_date: string;
+    notes?: string;
+  }) => void;
+  allowPastDate?: boolean;
 }
 
 export const AddWithdrawalModal = ({
@@ -32,9 +38,14 @@ export const AddWithdrawalModal = ({
   currentBalance,
   open,
   onOpenChange,
+  onWithdrawalComplete,
+  allowPastDate = false,
 }: AddWithdrawalModalProps) => {
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
+  const [withdrawalDate, setWithdrawalDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -43,6 +54,15 @@ export const AddWithdrawalModal = ({
       toast({
         title: "خطأ",
         description: "يرجى إدخال مبلغ صحيح",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!withdrawalDate) {
+      toast({
+        title: "خطأ",
+        description: "يرجى اختيار تاريخ السحب",
         variant: "destructive",
       });
       return;
@@ -64,18 +84,28 @@ export const AddWithdrawalModal = ({
       return;
     }
 
+    const withdrawalData = {
+      amount: withdrawalAmount,
+      withdrawal_date: withdrawalDate,
+      notes: notes || undefined,
+    };
+
+    // إذا كان هناك callback function، استخدمه بدلاً من إدراج مباشر
+    if (onWithdrawalComplete) {
+      onWithdrawalComplete(withdrawalData);
+      onOpenChange(false);
+      setAmount("");
+      setNotes("");
+      setWithdrawalDate(new Date().toISOString().split("T")[0]);
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const withdrawalData = {
+      const { error } = await supabase.from("employee_withdrawals").insert({
         employee_id: employee.id,
-        amount: withdrawalAmount,
-        withdrawal_date: new Date().toISOString().split("T")[0],
-        notes: notes || null,
-      };
-
-      const { error } = await supabase
-        .from("employee_withdrawals")
-        .insert(withdrawalData);
+        ...withdrawalData,
+      });
 
       if (error) throw error;
 
@@ -87,6 +117,7 @@ export const AddWithdrawalModal = ({
       onOpenChange(false);
       setAmount("");
       setNotes("");
+      setWithdrawalDate(new Date().toISOString().split("T")[0]);
     } catch (error) {
       console.error("خطأ في تسجيل السحب:", error);
       toast({
@@ -151,6 +182,24 @@ export const AddWithdrawalModal = ({
               </div>
             </CardContent>
           </Card>
+
+          {/* Withdrawal Date Input */}
+          <div className="space-y-2">
+            <Label htmlFor="withdrawal-date">تاريخ السحب</Label>
+            <Input
+              id="withdrawal-date"
+              type="date"
+              value={withdrawalDate}
+              onChange={(e) => setWithdrawalDate(e.target.value)}
+              max={new Date().toISOString().split("T")[0]}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              {allowPastDate
+                ? "يمكنك اختيار أي تاريخ سابق أو اليوم الحالي"
+                : "تاريخ السحب"}
+            </p>
+          </div>
 
           {/* Withdrawal Amount Input */}
           <div className="space-y-2">

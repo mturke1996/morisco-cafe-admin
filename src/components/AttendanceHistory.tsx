@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Calendar, Download, Filter, FileText, User, Clock, DollarSign } from "lucide-react";
+import {
+  Calendar,
+  Download,
+  Filter,
+  FileText,
+  User,
+  Clock,
+  DollarSign,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,8 +56,12 @@ const AttendanceHistory = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [withdrawalRecords, setWithdrawalRecords] = useState<WithdrawalRecord[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<
+    AttendanceRecord[]
+  >([]);
+  const [withdrawalRecords, setWithdrawalRecords] = useState<
+    WithdrawalRecord[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -60,19 +72,19 @@ const AttendanceHistory = () => {
   const fetchEmployees = async () => {
     try {
       const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('status', 'active')
-        .order('name');
+        .from("employees")
+        .select("*")
+        .eq("status", "active")
+        .order("name");
 
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
-      console.error('خطأ في جلب بيانات الموظفين:', error);
+      console.error("خطأ في جلب بيانات الموظفين:", error);
       toast({
         title: "خطأ",
         description: "فشل في جلب بيانات الموظفين",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -82,7 +94,7 @@ const AttendanceHistory = () => {
       toast({
         title: "تنبيه",
         description: "يرجى تحديد تاريخ البداية والنهاية",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -91,8 +103,9 @@ const AttendanceHistory = () => {
     try {
       // Fetch attendance records
       let attendanceQuery = supabase
-        .from('attendance')
-        .select(`
+        .from("attendance")
+        .select(
+          `
           id,
           employee_id,
           date,
@@ -110,41 +123,44 @@ const AttendanceHistory = () => {
             position,
             status
           )
-        `)
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: false });
+        `
+        )
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: false });
 
       if (selectedEmployee !== "all") {
-        attendanceQuery = attendanceQuery.eq('employee_id', selectedEmployee);
+        attendanceQuery = attendanceQuery.eq("employee_id", selectedEmployee);
       }
 
-      const { data: attendanceData, error: attendanceError } = await attendanceQuery;
+      const { data: attendanceData, error: attendanceError } =
+        await attendanceQuery;
       if (attendanceError) throw attendanceError;
 
       // Fetch withdrawal records
       let withdrawalQuery = supabase
-        .from('employee_withdrawals')
-        .select('*')
-        .gte('withdrawal_date', startDate)
-        .lte('withdrawal_date', endDate)
-        .order('withdrawal_date', { ascending: false });
+        .from("employee_withdrawals")
+        .select("*")
+        .gte("withdrawal_date", startDate)
+        .lte("withdrawal_date", endDate)
+        .order("withdrawal_date", { ascending: false });
 
       if (selectedEmployee !== "all") {
-        withdrawalQuery = withdrawalQuery.eq('employee_id', selectedEmployee);
+        withdrawalQuery = withdrawalQuery.eq("employee_id", selectedEmployee);
       }
 
-      const { data: withdrawalData, error: withdrawalError } = await withdrawalQuery;
+      const { data: withdrawalData, error: withdrawalError } =
+        await withdrawalQuery;
       if (withdrawalError) throw withdrawalError;
 
       setAttendanceRecords(attendanceData || []);
       setWithdrawalRecords(withdrawalData || []);
     } catch (error) {
-      console.error('خطأ في جلب السجلات:', error);
+      console.error("خطأ في جلب السجلات:", error);
       toast({
         title: "خطأ",
         description: "فشل في جلب السجلات",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -153,10 +169,18 @@ const AttendanceHistory = () => {
 
   const generatePDF = async () => {
     try {
-      const totalEarnings = attendanceRecords.reduce((sum, record) => 
-        sum + (record.daily_wage_earned || 0) + (record.bonus_amount || 0) - (record.deduction_amount || 0), 0
+      const totalEarnings = attendanceRecords.reduce(
+        (sum, record) =>
+          sum +
+          (record.daily_wage_earned || 0) +
+          (record.bonus_amount || 0) -
+          (record.deduction_amount || 0),
+        0
       );
-      const totalWithdrawals = withdrawalRecords.reduce((sum, record) => sum + record.amount, 0);
+      const totalWithdrawals = withdrawalRecords.reduce(
+        (sum, record) => sum + record.amount,
+        0
+      );
       const balance = totalEarnings - totalWithdrawals;
 
       const printContent = `
@@ -490,26 +514,38 @@ const AttendanceHistory = () => {
                   </div>
                 </div>
                 <h2 class="report-title">تقرير الحضور والمرتبات</h2>
-                <p class="report-date">من ${new Date(startDate).toLocaleDateString('en-US')} إلى ${new Date(endDate).toLocaleDateString('en-US')}</p>
+                <p class="report-date">من ${new Date(
+                  startDate
+                ).toLocaleDateString("en-US")} إلى ${new Date(
+        endDate
+      ).toLocaleDateString("en-US")}</p>
               </div>
             </div>
             
             <div class="stats-grid">
               <div class="stat-card">
                 <div class="stat-label">إجمالي أيام العمل</div>
-                <div class="stat-value stat-neutral">${attendanceRecords.length}</div>
+                <div class="stat-value stat-neutral">${
+                  attendanceRecords.length
+                }</div>
               </div>
               <div class="stat-card">
                 <div class="stat-label">إجمالي الأرباح</div>
-                <div class="stat-value stat-positive">${totalEarnings.toFixed(2)} د.ل</div>
+                <div class="stat-value stat-positive">${totalEarnings.toFixed(
+                  2
+                )} د.ل</div>
               </div>
               <div class="stat-card">
                 <div class="stat-label">إجمالي المسحوبات</div>
-                <div class="stat-value stat-negative">${totalWithdrawals.toFixed(2)} د.ل</div>
+                <div class="stat-value stat-negative">${totalWithdrawals.toFixed(
+                  2
+                )} د.ل</div>
               </div>
               <div class="stat-card">
                 <div class="stat-label">الرصيد المتبقي</div>
-                <div class="stat-value ${balance >= 0 ? 'stat-positive' : 'stat-negative'}">${balance.toFixed(2)} د.ل</div>
+                <div class="stat-value ${
+                  balance >= 0 ? "stat-positive" : "stat-negative"
+                }">${balance.toFixed(2)} د.ل</div>
               </div>
             </div>
 
@@ -531,30 +567,64 @@ const AttendanceHistory = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  ${attendanceRecords.map(record => {
-                    const netEarnings = (record.daily_wage_earned || 0) + (record.bonus_amount || 0) - (record.deduction_amount || 0);
-                    const dayWithdrawals = withdrawalRecords
-                      .filter(w => w.employee_id === record.employee_id && w.withdrawal_date === record.date)
-                      .reduce((sum, w) => sum + w.amount, 0);
-                    
-                    return `
+                  ${attendanceRecords
+                    .map((record) => {
+                      const netEarnings =
+                        (record.daily_wage_earned || 0) +
+                        (record.bonus_amount || 0) -
+                        (record.deduction_amount || 0);
+                      const dayWithdrawals = withdrawalRecords
+                        .filter(
+                          (w) =>
+                            w.employee_id === record.employee_id &&
+                            w.withdrawal_date === record.date
+                        )
+                        .reduce((sum, w) => sum + w.amount, 0);
+
+                      return `
                       <tr class="table-row">
-                        <td>${new Date(record.date).toLocaleDateString('en-US')}</td>
-                        <td style="font-weight: 600;">${record.employees?.name || 'غير محدد'}</td>
+                        <td>${new Date(record.date).toLocaleDateString(
+                          "en-US"
+                        )}</td>
+                        <td style="font-weight: 600;">${
+                          record.employees?.name || "غير محدد"
+                        }</td>
                         <td>
-                          <span class="status-badge ${record.status === 'present' ? 'status-present' : 'status-absent'}">
-                            ${record.status === 'present' ? 'حاضر' : 'غائب'}
+                          <span class="status-badge ${
+                            record.status === "present"
+                              ? "status-present"
+                              : "status-absent"
+                          }">
+                            ${record.status === "present" ? "حاضر" : "غائب"}
                           </span>
                         </td>
-                        <td>${record.check_in ? new Date(record.check_in).toLocaleTimeString('ar-LY', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
-                        <td class="amount-cell stat-positive">${(record.daily_wage_earned || 0).toFixed(2)} د.ل</td>
-                        <td class="amount-cell stat-positive">${(record.bonus_amount || 0).toFixed(2)} د.ل</td>
-                        <td class="amount-cell stat-negative">${(record.deduction_amount || 0).toFixed(2)} د.ل</td>
-                        <td class="amount-cell stat-positive" style="font-weight: 800;">${netEarnings.toFixed(2)} د.ل</td>
-                        <td class="amount-cell stat-negative">${dayWithdrawals.toFixed(2)} د.ل</td>
+                        <td>${
+                          record.check_in
+                            ? new Date(record.check_in).toLocaleTimeString(
+                                "en-US",
+                                { hour: "2-digit", minute: "2-digit" }
+                              )
+                            : "—"
+                        }</td>
+                        <td class="amount-cell stat-positive">${(
+                          record.daily_wage_earned || 0
+                        ).toFixed(2)} د.ل</td>
+                        <td class="amount-cell stat-positive">${(
+                          record.bonus_amount || 0
+                        ).toFixed(2)} د.ل</td>
+                        <td class="amount-cell stat-negative">${(
+                          record.deduction_amount || 0
+                        ).toFixed(2)} د.ل</td>
+                        <td class="amount-cell stat-positive" style="font-weight: 800;">${netEarnings.toFixed(
+                          2
+                        )} د.ل</td>
+                        <td class="amount-cell stat-negative">${dayWithdrawals.toFixed(
+                          2
+                        )} د.ل</td>
                       </tr>
                     `;
-                  }).join('')}
+                    })
+                    .join("")}
                 </tbody>
               </table>
             </div>
@@ -566,7 +636,9 @@ const AttendanceHistory = () => {
                 جميع البيانات محفوظة ومؤمنة وفقاً لأعلى معايير الأمان
               </p>
               <div class="generation-date">
-                تم إنشاء هذا التقرير في: ${new Date().toLocaleDateString('en-US')} - ${new Date().toLocaleTimeString('en-US')}
+                تم إنشاء هذا التقرير في: ${new Date().toLocaleDateString(
+                  "en-US"
+                )} - ${new Date().toLocaleTimeString("en-US")}
               </div>
             </div>
           </div>
@@ -575,36 +647,41 @@ const AttendanceHistory = () => {
       `;
 
       // Create a new window for printing
-      const printWindow = window.open('', '_blank', 'width=1200,height=800');
-      
+      const printWindow = window.open("", "_blank", "width=1200,height=800");
+
       if (!printWindow) {
         // Fallback: create a downloadable HTML file
-        const blob = new Blob([printContent], { type: 'text/html;charset=utf-8' });
+        const blob = new Blob([printContent], {
+          type: "text/html;charset=utf-8",
+        });
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
-        link.download = `تقرير_مقهى_موريسكو_${new Date().toISOString().split('T')[0]}.html`;
+        link.download = `تقرير_مقهى_موريسكو_${
+          new Date().toISOString().split("T")[0]
+        }.html`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
+
         toast({
           title: "تم التحميل بنجاح",
-          description: "تم تحميل التقرير كملف HTML. يمكنك فتحه وطباعته كـ PDF من المتصفح",
+          description:
+            "تم تحميل التقرير كملف HTML. يمكنك فتحه وطباعته كـ PDF من المتصفح",
         });
         return;
       }
 
       printWindow.document.write(printContent);
       printWindow.document.close();
-      
+
       // Wait for content to load then print
       printWindow.onload = () => {
         setTimeout(() => {
           printWindow.focus();
           printWindow.print();
-          
+
           // Close window after printing (with delay to ensure print dialog appears)
           setTimeout(() => {
             printWindow.close();
@@ -616,25 +693,27 @@ const AttendanceHistory = () => {
         title: "جاري فتح الطباعة",
         description: "سيتم فتح نافذة الطباعة الآن مع التصميم الجديد",
       });
-
     } catch (error) {
-      console.error('خطأ في إنشاء PDF:', error);
+      console.error("خطأ في إنشاء PDF:", error);
       toast({
         title: "خطأ",
         description: "فشل في إنشاء ملف PDF",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
-  const calculateWorkingHours = (checkIn: string | null, checkOut: string | null) => {
+  const calculateWorkingHours = (
+    checkIn: string | null,
+    checkOut: string | null
+  ) => {
     if (!checkIn) return "0";
-    
+
     const start = new Date(checkIn);
     const end = checkOut ? new Date(checkOut) : new Date();
     const diffInMs = end.getTime() - start.getTime();
     const diffInHours = diffInMs / (1000 * 60 * 60);
-    
+
     return diffInHours.toFixed(1);
   };
 
@@ -643,20 +722,20 @@ const AttendanceHistory = () => {
     if (!acc[date]) {
       acc[date] = {
         attendance: [],
-        withdrawals: []
+        withdrawals: [],
       };
     }
     acc[date].attendance.push(record);
     return acc;
-  }, {} as Record<string, { attendance: AttendanceRecord[], withdrawals: WithdrawalRecord[] }>);
+  }, {} as Record<string, { attendance: AttendanceRecord[]; withdrawals: WithdrawalRecord[] }>);
 
   // Add withdrawals to grouped data
-  withdrawalRecords.forEach(withdrawal => {
+  withdrawalRecords.forEach((withdrawal) => {
     const date = withdrawal.withdrawal_date;
     if (!groupedData[date]) {
       groupedData[date] = {
         attendance: [],
-        withdrawals: []
+        withdrawals: [],
       };
     }
     groupedData[date].withdrawals.push(withdrawal);
@@ -684,7 +763,9 @@ const AttendanceHistory = () => {
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">إلى تاريخ</label>
+              <label className="text-sm font-medium mb-2 block">
+                إلى تاريخ
+              </label>
               <input
                 type="date"
                 value={endDate}
@@ -694,7 +775,10 @@ const AttendanceHistory = () => {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">الموظف</label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+              <Select
+                value={selectedEmployee}
+                onValueChange={setSelectedEmployee}
+              >
                 <SelectTrigger className="text-sm">
                   <SelectValue placeholder="اختر الموظف" />
                 </SelectTrigger>
@@ -709,14 +793,22 @@ const AttendanceHistory = () => {
               </Select>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={fetchRecords} disabled={loading} className="flex-1 sm:flex-none">
+            <Button
+              onClick={fetchRecords}
+              disabled={loading}
+              className="flex-1 sm:flex-none"
+            >
               <FileText className="w-4 h-4 ml-2" />
               {loading ? "جاري التحميل..." : "عرض السجلات"}
             </Button>
             {attendanceRecords.length > 0 && (
-              <Button onClick={generatePDF} variant="outline" className="flex-1 sm:flex-none">
+              <Button
+                onClick={generatePDF}
+                variant="outline"
+                className="flex-1 sm:flex-none"
+              >
                 <Download className="w-4 h-4 ml-2" />
                 طباعة PDF
               </Button>
@@ -731,132 +823,194 @@ const AttendanceHistory = () => {
           {Object.entries(groupedData)
             .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
             .map(([date, data]) => (
-            <Card key={date} className="mb-4">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-lg">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    {new Date(date).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </div>
-                  <div className="flex gap-2 text-sm">
-                    {data.attendance.length > 0 && (
-                      <Badge variant="default">
-                        {data.attendance.length} حضور
-                      </Badge>
-                    )}
-                    {data.withdrawals.length > 0 && (
-                      <Badge variant="secondary">
-                        {data.withdrawals.reduce((sum, w) => sum + w.amount, 0).toFixed(2)} د.ل مسحوبات
-                      </Badge>
-                    )}
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Attendance Records */}
-                {data.attendance.length > 0 && (
-                  <div className="space-y-3 mb-4">
-                    <h4 className="font-medium text-primary flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      سجلات الحضور
-                    </h4>
-                    {data.attendance.map((record) => {
-                      const netEarnings = (record.daily_wage_earned || 0) + (record.bonus_amount || 0) - (record.deduction_amount || 0);
-                      return (
-                        <div key={record.id} className="bg-gray-50 p-4 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              <span className="font-medium">{record.employees.name}</span>
+              <Card key={date} className="mb-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between text-lg">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      {new Date(date).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </div>
+                    <div className="flex gap-2 text-sm">
+                      {data.attendance.length > 0 && (
+                        <Badge variant="default">
+                          {data.attendance.length} حضور
+                        </Badge>
+                      )}
+                      {data.withdrawals.length > 0 && (
+                        <Badge variant="secondary">
+                          {data.withdrawals
+                            .reduce((sum, w) => sum + w.amount, 0)
+                            .toFixed(2)}{" "}
+                          د.ل مسحوبات
+                        </Badge>
+                      )}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Attendance Records */}
+                  {data.attendance.length > 0 && (
+                    <div className="space-y-3 mb-4">
+                      <h4 className="font-medium text-primary flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        سجلات الحضور
+                      </h4>
+                      {data.attendance.map((record) => {
+                        const netEarnings =
+                          (record.daily_wage_earned || 0) +
+                          (record.bonus_amount || 0) -
+                          (record.deduction_amount || 0);
+                        return (
+                          <div
+                            key={record.id}
+                            className="bg-gray-50 p-4 rounded-lg"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4" />
+                                <span className="font-medium">
+                                  {record.employees.name}
+                                </span>
+                              </div>
+                              <Badge
+                                variant={
+                                  record.status === "present"
+                                    ? "default"
+                                    : "destructive"
+                                }
+                              >
+                                {record.status === "present" ? "حاضر" : "غائب"}
+                              </Badge>
                             </div>
-                            <Badge variant={record.status === 'present' ? 'default' : 'destructive'}>
-                              {record.status === 'present' ? 'حاضر' : 'غائب'}
-                            </Badge>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">وقت الدخول:</span>
-                              <div className="font-medium">
-                                {record.check_in ? new Date(record.check_in).toLocaleTimeString('ar-LY', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                }) : '-'}
+
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">
+                                  وقت الدخول:
+                                </span>
+                                <div className="font-medium">
+                                  {record.check_in
+                                    ? new Date(
+                                        record.check_in
+                                      ).toLocaleTimeString("en-US", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
+                                    : "-"}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">
+                                  ساعات العمل:
+                                </span>
+                                <div className="font-medium">
+                                  {calculateWorkingHours(
+                                    record.check_in,
+                                    record.check_out
+                                  )}{" "}
+                                  ساعة
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">
+                                  اليومية:
+                                </span>
+                                <div className="font-medium text-green-600">
+                                  {(record.daily_wage_earned || 0).toFixed(2)}{" "}
+                                  د.ل
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">
+                                  صافي الكسب:
+                                </span>
+                                <div className="font-medium text-primary">
+                                  {netEarnings.toFixed(2)} د.ل
+                                </div>
                               </div>
                             </div>
-                            <div>
-                              <span className="text-muted-foreground">ساعات العمل:</span>
-                              <div className="font-medium">{calculateWorkingHours(record.check_in, record.check_out)} ساعة</div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">اليومية:</span>
-                              <div className="font-medium text-green-600">{(record.daily_wage_earned || 0).toFixed(2)} د.ل</div>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">صافي الكسب:</span>
-                              <div className="font-medium text-primary">{netEarnings.toFixed(2)} د.ل</div>
-                            </div>
-                          </div>
-                          
-                          {((record.bonus_amount || 0) > 0 || (record.deduction_amount || 0) > 0) && (
-                            <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
-                              {(record.bonus_amount || 0) > 0 && (
-                                <div>
-                                  <span className="text-muted-foreground">مكافأة:</span>
-                                  <div className="font-medium text-green-600">+{record.bonus_amount} د.ل</div>
-                                </div>
-                              )}
-                              {(record.deduction_amount || 0) > 0 && (
-                                <div>
-                                  <span className="text-muted-foreground">خصم:</span>
-                                  <div className="font-medium text-red-600">-{record.deduction_amount} د.ل</div>
-                                  {record.deduction_reason && (
-                                    <div className="text-xs text-muted-foreground mt-1">{record.deduction_reason}</div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
 
-                {/* Withdrawal Records */}
-                {data.withdrawals.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-orange-600 flex items-center gap-2">
-                      <DollarSign className="w-4 h-4" />
-                      المسحوبات
-                    </h4>
-                    {data.withdrawals.map((withdrawal) => {
-                      const employee = employees.find(e => e.id === withdrawal.employee_id);
-                      return (
-                        <div key={withdrawal.id} className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              <span className="font-medium">{employee?.name || 'موظف محذوف'}</span>
-                            </div>
-                            <div className="text-orange-600 font-bold">-{withdrawal.amount.toFixed(2)} د.ل</div>
+                            {((record.bonus_amount || 0) > 0 ||
+                              (record.deduction_amount || 0) > 0) && (
+                              <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                                {(record.bonus_amount || 0) > 0 && (
+                                  <div>
+                                    <span className="text-muted-foreground">
+                                      مكافأة:
+                                    </span>
+                                    <div className="font-medium text-green-600">
+                                      +{record.bonus_amount} د.ل
+                                    </div>
+                                  </div>
+                                )}
+                                {(record.deduction_amount || 0) > 0 && (
+                                  <div>
+                                    <span className="text-muted-foreground">
+                                      خصم:
+                                    </span>
+                                    <div className="font-medium text-red-600">
+                                      -{record.deduction_amount} د.ل
+                                    </div>
+                                    {record.deduction_reason && (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {record.deduction_reason}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          {withdrawal.notes && (
-                            <div className="text-sm text-muted-foreground mt-2">{withdrawal.notes}</div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Withdrawal Records */}
+                  {data.withdrawals.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-orange-600 flex items-center gap-2">
+                        <DollarSign className="w-4 h-4" />
+                        المسحوبات
+                      </h4>
+                      {data.withdrawals.map((withdrawal) => {
+                        const employee = employees.find(
+                          (e) => e.id === withdrawal.employee_id
+                        );
+                        return (
+                          <div
+                            key={withdrawal.id}
+                            className="bg-orange-50 p-4 rounded-lg border border-orange-200"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4" />
+                                <span className="font-medium">
+                                  {employee?.name || "موظف محذوف"}
+                                </span>
+                              </div>
+                              <div className="text-orange-600 font-bold">
+                                -{withdrawal.amount.toFixed(2)} د.ل
+                              </div>
+                            </div>
+                            {withdrawal.notes && (
+                              <div className="text-sm text-muted-foreground mt-2">
+                                {withdrawal.notes}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
         </div>
       )}
 

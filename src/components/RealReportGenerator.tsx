@@ -338,7 +338,7 @@ export const RealReportGenerator = ({
                       <h4 className="font-medium text-green-800">{key}</h4>
                       <p className="text-lg font-bold text-green-600">
                         {typeof value === "number"
-                          ? value.toLocaleString("ar-SA")
+                          ? value.toLocaleString("en-US")
                           : String(value)}
                       </p>
                     </div>

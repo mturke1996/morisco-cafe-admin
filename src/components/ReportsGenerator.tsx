@@ -677,7 +677,7 @@ export const ReportsGenerator = ({
                             </span>
                             <Badge variant="outline" className="text-slate-700">
                               {typeof value === "number"
-                                ? value.toLocaleString("ar-SA")
+                                ? value.toLocaleString("en-US")
                                 : String(value)}
                             </Badge>
                           </div>

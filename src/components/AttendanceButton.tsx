@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Clock, 
-  Sun, 
-  Moon, 
-  ChevronDown,
-  CheckCircle
-} from "lucide-react";
+import { Clock, Sun, Moon, ChevronDown, CheckCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,36 +23,36 @@ interface AttendanceButtonProps {
   } | null;
 }
 
-export const AttendanceButton = ({ 
-  employeeId, 
-  employeeName, 
+export const AttendanceButton = ({
+  employeeId,
+  employeeName,
   onAttendanceRecorded,
-  currentRecord 
+  currentRecord,
 }: AttendanceButtonProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const recordAttendance = async (shiftType: 'morning' | 'evening') => {
+  const recordAttendance = async (shiftType: "morning" | "evening") => {
     setLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
+      const today = new Date().toISOString().split("T")[0];
+
       // التحقق من وجود سجل موجود
       const { data: existingRecord } = await supabase
-        .from('attendance')
-        .select('*')
-        .eq('employee_id', employeeId)
-        .eq('date', today)
+        .from("attendance")
+        .select("*")
+        .eq("employee_id", employeeId)
+        .eq("date", today)
         .single();
 
       if (existingRecord) {
         // تحديث السجل الموجود
         const updateData: any = {
           updated_at: new Date().toISOString(),
-          status: 'present'
+          status: "present",
         };
 
-        if (shiftType === 'morning') {
+        if (shiftType === "morning") {
           if (existingRecord.check_in) {
             toast({
               title: "تنبيه",
@@ -71,7 +65,7 @@ export const AttendanceButton = ({
         } else {
           if (existingRecord.check_out) {
             toast({
-              title: "تنبيه", 
+              title: "تنبيه",
               description: "تم تسجيل الحضور للوردية المسائية من قبل",
               variant: "destructive",
             });
@@ -81,29 +75,28 @@ export const AttendanceButton = ({
         }
 
         const { error: updateError } = await supabase
-          .from('attendance')
+          .from("attendance")
           .update(updateData)
-          .eq('id', existingRecord.id);
+          .eq("id", existingRecord.id);
 
         if (updateError) throw updateError;
-
       } else {
         // إنشاء سجل جديد
         const insertData: any = {
           employee_id: employeeId,
           date: today,
-          status: 'present',
-          created_at: new Date().toISOString()
+          status: "present",
+          created_at: new Date().toISOString(),
         };
 
-        if (shiftType === 'morning') {
+        if (shiftType === "morning") {
           insertData.check_in = new Date().toISOString();
         } else {
           insertData.check_out = new Date().toISOString();
         }
 
         const { error: insertError } = await supabase
-          .from('attendance')
+          .from("attendance")
           .insert(insertData);
 
         if (insertError) throw insertError;
@@ -111,15 +104,16 @@ export const AttendanceButton = ({
 
       toast({
         title: "تم التسجيل بنجاح",
-        description: `تم تسجيل حضور ${employeeName} للوردية ${shiftType === 'morning' ? 'الصباحية' : 'المسائية'}`,
+        description: `تم تسجيل حضور ${employeeName} للوردية ${
+          shiftType === "morning" ? "الصباحية" : "المسائية"
+        }`,
       });
 
       if (onAttendanceRecorded) {
         onAttendanceRecorded();
       }
-
     } catch (error) {
-      console.error('Error recording attendance:', error);
+      console.error("Error recording attendance:", error);
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء تسجيل الحضور",
@@ -130,7 +124,8 @@ export const AttendanceButton = ({
     }
   };
 
-  const hasAttendanceToday = currentRecord && (currentRecord.check_in || currentRecord.check_out);
+  const hasAttendanceToday =
+    currentRecord && (currentRecord.check_in || currentRecord.check_out);
   const hasMorningShift = currentRecord?.check_in;
   const hasEveningShift = currentRecord?.check_out;
 
@@ -141,7 +136,9 @@ export const AttendanceButton = ({
           variant={hasAttendanceToday ? "default" : "outline"}
           size="sm"
           disabled={loading}
-          className={hasAttendanceToday ? "bg-green-600 hover:bg-green-700" : ""}
+          className={
+            hasAttendanceToday ? "bg-green-600 hover:bg-green-700" : ""
+          }
         >
           <Clock className="w-4 h-4 ml-2" />
           {hasAttendanceToday ? "حاضر" : "حضور"}
@@ -153,9 +150,9 @@ export const AttendanceButton = ({
           تسجيل الحضور - {employeeName}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem
-          onClick={() => recordAttendance('morning')}
+          onClick={() => recordAttendance("morning")}
           disabled={loading || !!hasMorningShift}
           className="flex items-center justify-between"
         >
@@ -169,7 +166,7 @@ export const AttendanceButton = ({
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => recordAttendance('evening')}
+          onClick={() => recordAttendance("evening")}
           disabled={loading || !!hasEveningShift}
           className="flex items-center justify-between"
         >
@@ -183,33 +180,45 @@ export const AttendanceButton = ({
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
-        
+
         {hasAttendanceToday && (
           <div className="px-2 py-1 text-xs text-slate-600">
             <div className="space-y-1">
               {hasMorningShift && (
                 <div className="flex items-center gap-1">
-                  <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-orange-50 text-orange-700"
+                  >
                     صباحية ✓
                   </Badge>
                   <span className="text-xs">
-                    {new Date(currentRecord!.check_in!).toLocaleTimeString('ar-SA', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
+                    {new Date(currentRecord!.check_in!).toLocaleTimeString(
+                      "en-US",
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
                   </span>
                 </div>
               )}
               {hasEveningShift && (
                 <div className="flex items-center gap-1">
-                  <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-700">
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-indigo-50 text-indigo-700"
+                  >
                     مسائية ✓
                   </Badge>
                   <span className="text-xs">
-                    {new Date(currentRecord!.check_out!).toLocaleTimeString('ar-SA', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
+                    {new Date(currentRecord!.check_out!).toLocaleTimeString(
+                      "en-US",
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }
+                    )}
                   </span>
                 </div>
               )}

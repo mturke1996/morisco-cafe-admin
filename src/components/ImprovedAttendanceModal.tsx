@@ -130,7 +130,7 @@ export const ImprovedAttendanceModal = ({
 
     setLoading(true);
     try {
-      const currentTime = new Date().toLocaleTimeString("ar-SA", {
+      const currentTime = new Date().toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,

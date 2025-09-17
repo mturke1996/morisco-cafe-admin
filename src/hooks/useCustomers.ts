@@ -1,7 +1,6 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 export const useCustomers = () => {
   return useQuery({
@@ -27,7 +26,10 @@ export const useCustomers = () => {
           if (debtsError) throw debtsError;
 
           const total_debt = debts.reduce((sum, debt) => sum + debt.amount, 0);
-          const total_paid = debts.reduce((sum, debt) => sum + (debt.paid_amount || 0), 0);
+          const total_paid = debts.reduce(
+            (sum, debt) => sum + (debt.paid_amount || 0),
+            0
+          );
           const remaining_debt = total_debt - total_paid;
 
           return {
@@ -35,7 +37,7 @@ export const useCustomers = () => {
             debts,
             total_debt,
             total_paid,
-            remaining_debt
+            remaining_debt,
           };
         })
       );
@@ -63,14 +65,17 @@ export const useCustomerStats = () => {
       if (error) throw error;
 
       const total_debt = debts.reduce((sum, debt) => sum + debt.amount, 0);
-      const total_paid = debts.reduce((sum, debt) => sum + (debt.paid_amount || 0), 0);
+      const total_paid = debts.reduce(
+        (sum, debt) => sum + (debt.paid_amount || 0),
+        0
+      );
       const remaining_debt = total_debt - total_paid;
 
       return {
         total_customers: total_customers || 0,
         total_debt,
         total_paid,
-        remaining_debt
+        remaining_debt,
       };
     },
   });
@@ -98,7 +103,8 @@ export const useCustomerDebts = (customerId?: string) => {
 
 export const useAddCustomer = () => {
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   return useMutation({
     mutationFn: async (customerData: {
       name: string;
@@ -118,10 +124,17 @@ export const useAddCustomer = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["customer-stats"] });
-      toast.success("تم إضافة العميل بنجاح");
+      toast({
+        title: "تم الإضافة بنجاح",
+        description: "تم إضافة العميل بنجاح",
+      });
     },
     onError: (error) => {
-      toast.error("حدث خطأ في إضافة العميل");
+      toast({
+        title: "خطأ في الإضافة",
+        description: "حدث خطأ في إضافة العميل",
+        variant: "destructive",
+      });
       console.error(error);
     },
   });
@@ -129,7 +142,8 @@ export const useAddCustomer = () => {
 
 export const useDeleteCustomer = () => {
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   return useMutation({
     mutationFn: async (customerId: string) => {
       // Instead of deleting, we mark the customer as deleted
@@ -146,10 +160,17 @@ export const useDeleteCustomer = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["customer-stats"] });
-      toast.success("تم حذف العميل بنجاح");
+      toast({
+        title: "تم الحذف بنجاح",
+        description: "تم حذف العميل بنجاح",
+      });
     },
     onError: (error) => {
-      toast.error("حدث خطأ في حذف العميل");
+      toast({
+        title: "خطأ في الحذف",
+        description: "حدث خطأ في حذف العميل",
+        variant: "destructive",
+      });
       console.error(error);
     },
   });
@@ -157,7 +178,8 @@ export const useDeleteCustomer = () => {
 
 export const useAddDebt = () => {
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   return useMutation({
     mutationFn: async (debtData: {
       customer_id: string;
@@ -177,10 +199,17 @@ export const useAddDebt = () => {
       queryClient.invalidateQueries({ queryKey: ["customer-debts"] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["customer-stats"] });
-      toast.success("تم إضافة الدين بنجاح");
+      toast({
+        title: "تم الإضافة بنجاح",
+        description: "تم إضافة الدين بنجاح",
+      });
     },
     onError: (error) => {
-      toast.error("حدث خطأ في إضافة الدين");
+      toast({
+        title: "خطأ في الإضافة",
+        description: "حدث خطأ في إضافة الدين",
+        variant: "destructive",
+      });
       console.error(error);
     },
   });
@@ -188,9 +217,16 @@ export const useAddDebt = () => {
 
 export const usePayDebt = () => {
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   return useMutation({
-    mutationFn: async ({ debtId, paidAmount }: { debtId: string; paidAmount: number }) => {
+    mutationFn: async ({
+      debtId,
+      paidAmount,
+    }: {
+      debtId: string;
+      paidAmount: number;
+    }) => {
       const { data: debt } = await supabase
         .from("customer_debts")
         .select("*")
@@ -219,10 +255,17 @@ export const usePayDebt = () => {
       queryClient.invalidateQueries({ queryKey: ["customer-debts"] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["customer-stats"] });
-      toast.success("تم دفع الدين بنجاح");
+      toast({
+        title: "تم الدفع بنجاح",
+        description: "تم دفع الدين بنجاح",
+      });
     },
     onError: (error) => {
-      toast.error("حدث خطأ في دفع الدين");
+      toast({
+        title: "خطأ في الدفع",
+        description: "حدث خطأ في دفع الدين",
+        variant: "destructive",
+      });
       console.error(error);
     },
   });

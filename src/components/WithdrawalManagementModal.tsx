@@ -203,7 +203,7 @@ const WithdrawalManagementModal = ({
                               <Badge variant="outline">
                                 {new Date(
                                   withdrawal.created_at
-                                ).toLocaleTimeString("ar-SA", {
+                                ).toLocaleTimeString("en-US", {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })}

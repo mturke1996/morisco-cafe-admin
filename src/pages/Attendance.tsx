@@ -51,6 +51,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AttendanceHistory from "@/components/AttendanceHistory";
 import AttendanceManagementModal from "@/components/AttendanceManagementModal";
+import QuickWithdrawalButton from "@/components/QuickWithdrawalButton";
+import WithdrawalStatsCard from "@/components/WithdrawalStatsCard";
 import { useAttendance } from "@/hooks/useAttendance";
 
 interface Employee {
@@ -138,7 +140,7 @@ const AttendanceCard = ({
             <p className="text-xs text-muted-foreground mb-1">وقت الدخول</p>
             <p className="text-sm font-medium">
               {record.check_in
-                ? new Date(record.check_in).toLocaleTimeString("ar-LY", {
+                ? new Date(record.check_in).toLocaleTimeString("en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })
@@ -198,7 +200,7 @@ const AttendanceCard = ({
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -217,6 +219,20 @@ const AttendanceCard = ({
             <Edit className="w-3 h-3 ml-1" />
             تعديل
           </Button>
+          <QuickWithdrawalButton
+            employeeId={record.employee_id}
+            employeeName={record.employees.name}
+            currentBalance={
+              record.daily_wage_earned +
+              (record.bonus_amount || 0) -
+              (record.deduction_amount || 0)
+            }
+            onWithdrawalComplete={() => {
+              // يمكن إضافة تحديث البيانات هنا إذا لزم الأمر
+            }}
+            size="sm"
+            className="text-xs h-8"
+          />
           <Button
             variant="outline"
             size="sm"
@@ -248,7 +264,9 @@ const Attendance = () => {
     null
   );
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false);
-  const [managingRecord, setManagingRecord] = useState<AttendanceRecord | null>(null);
+  const [managingRecord, setManagingRecord] = useState<AttendanceRecord | null>(
+    null
+  );
   const [editFormData, setEditFormData] = useState({
     deduction_amount: "",
     bonus_amount: "",
@@ -263,7 +281,7 @@ const Attendance = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  const today = new Date().toLocaleDateString("en-GB");
+  const today = new Date().toLocaleDateString("en-US");
 
   useEffect(() => {
     fetchEmployees();
@@ -775,7 +793,7 @@ const Attendance = () => {
                             صباح:{" "}
                             {new Date(
                               existingRecord.check_in
-                            ).toLocaleTimeString("ar-LY", {
+                            ).toLocaleTimeString("en-US", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
@@ -789,7 +807,7 @@ const Attendance = () => {
                             مساء:{" "}
                             {new Date(
                               existingRecord.check_out
-                            ).toLocaleTimeString("ar-LY", {
+                            ).toLocaleTimeString("en-US", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
@@ -828,11 +846,11 @@ const Attendance = () => {
   return (
     <div className="min-h-screen bg-background p-3" dir="rtl">
       <div className="max-w-4xl mx-auto space-y-4">
-        {/* Header */}
+        {/* Header - Mobile Optimized */}
         <div className="space-y-3">
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Clock className="w-6 h-6 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               الحضور والغياب
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
@@ -1131,7 +1149,7 @@ const Attendance = () => {
                                         صباح:{" "}
                                         {new Date(
                                           existingRecord.check_in
-                                        ).toLocaleTimeString("ar-LY", {
+                                        ).toLocaleTimeString("en-US", {
                                           hour: "2-digit",
                                           minute: "2-digit",
                                         })}
@@ -1146,7 +1164,7 @@ const Attendance = () => {
                                         مساء:{" "}
                                         {new Date(
                                           existingRecord.check_out
-                                        ).toLocaleTimeString("ar-LY", {
+                                        ).toLocaleTimeString("en-US", {
                                           hour: "2-digit",
                                           minute: "2-digit",
                                         })}
@@ -1182,77 +1200,86 @@ const Attendance = () => {
               )}
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-3">
-              <Card>
-                <CardContent className="p-4">
+            {/* Stats Cards - Mobile Optimized */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground truncate">
                         إجمالي الموظفين
                       </p>
-                      <p className="text-xl font-bold">{employees.length}</p>
+                      <p className="text-lg sm:text-xl font-bold">
+                        {employees.length}
+                      </p>
                     </div>
-                    <Users className="w-5 h-5 text-muted-foreground" />
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-4">
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">الحاضرون</p>
-                      <p className="text-xl font-bold text-green-600">
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground truncate">
+                        الحاضرون
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-green-600">
                         {presentCount}
                       </p>
                     </div>
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-4">
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">الغائبون</p>
-                      <p className="text-xl font-bold text-red-600">
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground truncate">
+                        الغائبون
+                      </p>
+                      <p className="text-lg sm:text-xl font-bold text-red-600">
                         {absentCount}
                       </p>
                     </div>
-                    <XCircle className="w-5 h-5 text-red-600" />
+                    <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-4">
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground truncate">
                         معدل الحضور
                       </p>
-                      <p className="text-xl font-bold text-primary">
+                      <p className="text-lg sm:text-xl font-bold text-primary">
                         {attendanceRate}%
                       </p>
                     </div>
-                    <Calendar className="w-5 h-5 text-primary" />
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Filters */}
-            <Card>
+            {/* Withdrawal Stats */}
+            <WithdrawalStatsCard selectedDate={selectedDate} />
+
+            {/* Filters - Mobile Optimized */}
+            <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Filter className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
                   تصفية النتائج
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">
                       التاريخ
@@ -1261,7 +1288,7 @@ const Attendance = () => {
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+                      className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -1272,7 +1299,7 @@ const Attendance = () => {
                       value={selectedEmployee}
                       onValueChange={setSelectedEmployee}
                     >
-                      <SelectTrigger className="text-sm">
+                      <SelectTrigger className="text-sm h-10">
                         <SelectValue placeholder="اختر الموظف" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1289,10 +1316,12 @@ const Attendance = () => {
               </CardContent>
             </Card>
 
-            {/* Attendance Records */}
-            <Card>
+            {/* Attendance Records - Mobile Optimized */}
+            <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">سجل الحضور اليومي</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  سجل الحضور اليومي
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {loading ? (
@@ -1311,7 +1340,7 @@ const Attendance = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="p-4 space-y-3">
+                  <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                     {filteredRecords.map((record) => (
                       <AttendanceCard
                         key={record.id}
@@ -1332,19 +1361,21 @@ const Attendance = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Record Dialog */}
+        {/* Edit Record Dialog - Mobile Optimized */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent
-            className="max-w-sm mx-2 max-h-[90vh] overflow-y-auto"
+            className="max-w-sm mx-2 max-h-[90vh] overflow-y-auto sm:max-w-md"
             dir="rtl"
           >
             <DialogHeader>
-              <DialogTitle className="text-lg">تعديل سجل الحضور</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
+                تعديل سجل الحضور
+              </DialogTitle>
               <DialogDescription className="text-sm">
                 يمكنك تعديل الخصومات والمكافآت والملاحظات
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <Label htmlFor="deduction_amount" className="text-sm">
                   مبلغ الخصم (د.ل)
@@ -1360,7 +1391,7 @@ const Attendance = () => {
                     })
                   }
                   placeholder="0"
-                  className="mt-1"
+                  className="mt-1 h-10"
                 />
               </div>
 
@@ -1378,7 +1409,7 @@ const Attendance = () => {
                     })
                   }
                   placeholder="أدخل سبب الخصم"
-                  className="mt-1"
+                  className="mt-1 h-10"
                 />
               </div>
 
@@ -1397,7 +1428,7 @@ const Attendance = () => {
                     })
                   }
                   placeholder="0"
-                  className="mt-1"
+                  className="mt-1 h-10"
                 />
               </div>
 
@@ -1412,7 +1443,7 @@ const Attendance = () => {
                       early_departure: e.target.checked,
                     })
                   }
-                  className="rounded"
+                  className="rounded w-4 h-4"
                 />
                 <Label htmlFor="early_departure" className="text-sm">
                   انصراف مبكر
@@ -1430,18 +1461,21 @@ const Attendance = () => {
                     setEditFormData({ ...editFormData, notes: e.target.value })
                   }
                   placeholder="أدخل ملاحظات إضافية"
-                  className="mt-1"
+                  className="mt-1 h-10"
                 />
               </div>
 
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleSaveEdit} className="flex-1 text-sm">
+                <Button
+                  onClick={handleSaveEdit}
+                  className="flex-1 text-sm h-10"
+                >
                   حفظ التعديلات
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsEditDialogOpen(false)}
-                  className="flex-1 text-sm"
+                  className="flex-1 text-sm h-10"
                 >
                   إلغاء
                 </Button>
@@ -1454,7 +1488,24 @@ const Attendance = () => {
         <AttendanceManagementModal
           open={isManagementModalOpen}
           onOpenChange={setIsManagementModalOpen}
-          attendanceRecord={managingRecord}
+          attendanceRecord={
+            managingRecord
+              ? {
+                  id: managingRecord.id,
+                  employee_id: managingRecord.employee_id,
+                  check_in: managingRecord.check_in,
+                  check_out: managingRecord.check_out,
+                  status: managingRecord.status,
+                  notes: managingRecord.notes,
+                  employees: {
+                    id: managingRecord.employees.id,
+                    name: managingRecord.employees.name,
+                    position: managingRecord.employees.position,
+                    salary: 0, // Default salary, will be updated by the modal
+                  },
+                }
+              : null
+          }
           onAttendanceUpdated={handleAttendanceUpdated}
         />
       </div>
