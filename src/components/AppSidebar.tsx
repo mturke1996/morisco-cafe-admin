@@ -25,6 +25,7 @@ import {
   Coffee,
   ArrowLeft,
   Menu,
+  Star,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -64,6 +65,13 @@ const menuItems = [
     icon: Menu,
     color: "text-green-700",
     bgColor: "bg-green-50 hover:bg-green-100",
+  },
+  {
+    title: "إدارة التقييمات",
+    url: "/ratings",
+    icon: Star,
+    color: "text-yellow-700",
+    bgColor: "bg-yellow-50 hover:bg-yellow-100",
   },
   {
     title: "المصروفات",

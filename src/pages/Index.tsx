@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRatingStats } from "@/hooks/useRatings";
 import {
   Card,
   CardContent,
@@ -46,6 +47,7 @@ import {
 const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: ratingStats } = useRatingStats();
   const [stats, setStats] = useState({
     totalEmployees: 0,
     todayAttendance: 0,
@@ -351,6 +353,19 @@ const Index = () => {
       hoverEffect: "hover:shadow-green-300/30",
     },
     {
+      title: "إدارة التقييمات",
+      description: "إدارة تقييمات العملاء والتعليقات",
+      icon: Star,
+      path: "/ratings",
+      gradient: "from-yellow-500 via-yellow-600 to-yellow-700",
+      bgColor: "bg-gradient-to-br from-yellow-50 via-yellow-100 to-yellow-200",
+      iconColor: "text-yellow-600",
+      borderColor: "border-yellow-300",
+      shadowColor: "shadow-yellow-200/50",
+      iconBg: "bg-gradient-to-br from-yellow-100 to-yellow-200",
+      hoverEffect: "hover:shadow-yellow-300/30",
+    },
+    {
       title: "المصروفات",
       description: "إدارة المصروفات",
       icon: Receipt,
@@ -483,6 +498,17 @@ const Index = () => {
       iconBg: "bg-gradient-to-br from-pink-100 to-pink-200",
       iconColor: "text-pink-600",
       trend: "neutral",
+    },
+    {
+      title: "التقييمات",
+      value: ratingStats ? ratingStats.total_ratings.toString() : "0",
+      subtitle: ratingStats ? `متوسط: ${ratingStats.average_rating.toFixed(1)} نجوم` : "لا توجد تقييمات",
+      icon: Star,
+      gradient: "from-yellow-500 to-yellow-600",
+      bgColor: "bg-gradient-to-br from-yellow-50 to-yellow-100",
+      iconBg: "bg-gradient-to-br from-yellow-100 to-yellow-200",
+      iconColor: "text-yellow-600",
+      trend: ratingStats && ratingStats.average_rating >= 4 ? "up" : ratingStats && ratingStats.average_rating >= 3 ? "neutral" : "down",
     },
     {
       title: "الديون المعلقة",

@@ -65,6 +65,9 @@ import {
   MoreVertical,
   Heart,
   ShoppingCart,
+  Power,
+  PowerOff,
+  Camera,
 } from "lucide-react";
 import {
   useMenuItems,
@@ -525,7 +528,9 @@ const UltimateMenuManagement = () => {
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
                 <div className="flex-1">
-                  <Label htmlFor="search" className="text-sm font-medium">البحث في القائمة</Label>
+                  <Label htmlFor="search" className="text-sm font-medium">
+                    البحث في القائمة
+                  </Label>
                   <div className="relative">
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
@@ -540,7 +545,9 @@ const UltimateMenuManagement = () => {
 
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <div className="sm:w-40">
-                    <Label htmlFor="category" className="text-sm font-medium">التصنيف</Label>
+                    <Label htmlFor="category" className="text-sm font-medium">
+                      التصنيف
+                    </Label>
                     <Select
                       value={selectedCategory}
                       onValueChange={setSelectedCategory}
@@ -560,7 +567,9 @@ const UltimateMenuManagement = () => {
                   </div>
 
                   <div className="sm:w-32">
-                    <Label htmlFor="sort" className="text-sm font-medium">الترتيب</Label>
+                    <Label htmlFor="sort" className="text-sm font-medium">
+                      الترتيب
+                    </Label>
                     <Select
                       value={sortBy}
                       onValueChange={(value: any) => setSortBy(value)}
@@ -612,6 +621,63 @@ const UltimateMenuManagement = () => {
             </CardContent>
           </Card>
 
+          {/* Categories Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="w-5 h-5" />
+                التصنيفات المتاحة
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                {categories.map((category) => {
+                  const IconComponent = getCategoryIcon(category);
+                  const categoryColor = getCategoryColor(category);
+                  const categoryItems = menuItems.filter(
+                    (item) => item.category === category
+                  );
+                  const isSelected = selectedCategoryTab === category;
+
+                  return (
+                    <motion.div
+                      key={category}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Card
+                        className={`cursor-pointer transition-all duration-300 hover:shadow-md ${
+                          isSelected
+                            ? `${categoryColor} ring-2 ring-offset-2 ring-primary`
+                            : `${categoryColor}`
+                        }`}
+                        onClick={() => setSelectedCategoryTab(category)}
+                      >
+                        <CardContent className="p-2 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <div
+                              className={`p-2 rounded-full ${categoryColor}`}
+                            >
+                              <IconComponent className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-xs leading-tight">
+                                {getCategoryName(category)}
+                              </h3>
+                              <p className="text-xs text-muted-foreground">
+                                {categoryItems.length}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Menu Items */}
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -641,9 +707,9 @@ const UltimateMenuManagement = () => {
                             }`}
                           >
                             {item.is_available ? (
-                              <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <Power className="w-3 h-3 sm:w-4 sm:h-4" />
                             ) : (
-                              <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <PowerOff className="w-3 h-3 sm:w-4 sm:h-4" />
                             )}
                           </Button>
 
@@ -651,9 +717,9 @@ const UltimateMenuManagement = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
+                              className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600"
                             >
-                              <MoreVertical className="w-4 h-4" />
+                              <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
 
                             <div className="absolute top-10 right-0 bg-white rounded-lg shadow-lg border py-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 min-w-[120px]">
@@ -708,15 +774,17 @@ const UltimateMenuManagement = () => {
                           {/* Options */}
                           {item.options && item.options.length > 0 && (
                             <div className="flex flex-wrap gap-1 mb-4">
-                              {item.options.slice(0, 2).map((option, optionIndex) => (
-                                <Badge
-                                  key={optionIndex}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {option}
-                                </Badge>
-                              ))}
+                              {item.options
+                                .slice(0, 2)
+                                .map((option, optionIndex) => (
+                                  <Badge
+                                    key={optionIndex}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {option}
+                                  </Badge>
+                                ))}
                               {item.options.length > 2 && (
                                 <Badge variant="secondary" className="text-xs">
                                   +{item.options.length - 2}
@@ -791,7 +859,10 @@ const UltimateMenuManagement = () => {
                 const categoryColor = getCategoryColor(item.category);
 
                 return (
-                  <Card key={item.id} className="hover:shadow-lg transition-all duration-300">
+                  <Card
+                    key={item.id}
+                    className="hover:shadow-lg transition-all duration-300"
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
@@ -834,7 +905,9 @@ const UltimateMenuManagement = () => {
                           </div>
 
                           <Badge
-                            variant={item.is_available ? "default" : "secondary"}
+                            variant={
+                              item.is_available ? "default" : "secondary"
+                            }
                             className={`text-xs ${
                               item.is_available
                                 ? "bg-green-100 text-green-800"
@@ -971,9 +1044,7 @@ const UltimateMenuManagement = () => {
               <Textarea id="description" placeholder="وصف العنصر" />
             </div>
             <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsAddModalOpen(false)}>
-                إضافة
-              </Button>
+              <Button onClick={() => setIsAddModalOpen(false)}>إضافة</Button>
               <Button
                 variant="outline"
                 onClick={() => setIsAddModalOpen(false)}
@@ -986,49 +1057,127 @@ const UltimateMenuManagement = () => {
       </Dialog>
 
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>تعديل العنصر</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              تعديل العنصر - {selectedItem?.name}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-name">اسم العنصر *</Label>
-                <Input id="edit-name" placeholder="اسم العنصر" />
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                المعلومات الأساسية
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-name">اسم العنصر *</Label>
+                  <Input
+                    id="edit-name"
+                    placeholder="اسم العنصر"
+                    defaultValue={selectedItem?.name || ""}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-category">التصنيف *</Label>
+                  <Select defaultValue={selectedItem?.category || ""}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر التصنيف" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {getCategoryName(category)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
-                <Label htmlFor="edit-category">التصنيف *</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر التصنيف" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {getCategoryName(category)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="edit-description">الوصف</Label>
+                <Textarea
+                  id="edit-description"
+                  placeholder="وصف العنصر"
+                  defaultValue={selectedItem?.description || ""}
+                  rows={3}
+                />
               </div>
             </div>
-            <div>
-              <Label htmlFor="edit-price">السعر (د.ل)</Label>
-              <Input id="edit-price" type="number" placeholder="0.00" />
+
+            {/* Pricing */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                التسعير
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-price">السعر الثابت (د.ل)</Label>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    placeholder="0.00"
+                    defaultValue={selectedItem?.price || ""}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-image">رابط الصورة</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="edit-image"
+                      placeholder="https://example.com/image.jpg"
+                      defaultValue={selectedItem?.image_url || ""}
+                    />
+                    <Button variant="outline" size="sm">
+                      <Camera className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="edit-description">الوصف</Label>
-              <Textarea id="edit-description" placeholder="وصف العنصر" />
+
+            {/* Availability */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                التوفر والإعدادات
+              </h3>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit-available"
+                  defaultChecked={selectedItem?.is_available || false}
+                />
+                <Label htmlFor="edit-available">متوفر للطلب</Label>
+              </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsEditModalOpen(false)}>
-                تحديث
-              </Button>
+
+            {/* Image Preview */}
+            {selectedItem?.image_url && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  معاينة الصورة
+                </h3>
+                <div className="flex justify-center">
+                  <img
+                    src={selectedItem.image_url}
+                    alt={selectedItem.name}
+                    className="w-32 h-32 object-cover rounded-lg border"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <Button
                 variant="outline"
                 onClick={() => setIsEditModalOpen(false)}
               >
                 إلغاء
+              </Button>
+              <Button className="flex items-center gap-2">
+                <Save className="w-4 h-4" />
+                حفظ التغييرات
               </Button>
             </div>
           </div>
