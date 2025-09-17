@@ -53,6 +53,12 @@ import {
 } from "@/hooks/useRatings";
 import { Rating, RatingFilters } from "@/types/ratings";
 import { useToast } from "@/hooks/use-toast";
+import {
+  containsProfanity,
+  extractProfanityWords,
+  getProfanityLevel,
+  generateProfanityReport,
+} from "@/utils/profanityFilter";
 
 const RatingsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -248,7 +254,22 @@ const RatingsManagement = () => {
                 <div>
                   <p className="text-sm font-medium text-red-600">محتوى مسيء</p>
                   <p className="text-2xl font-bold text-red-900">
-                    {stats.flagged_ratings}
+                    {
+                      ratings.filter(
+                        (r) => r.comment && containsProfanity(r.comment)
+                      ).length
+                    }
+                  </p>
+                  <p className="text-xs text-red-600">
+                    {ratings.filter(
+                      (r) => r.comment && containsProfanity(r.comment)
+                    ).length > 0
+                      ? `${
+                          ratings.filter(
+                            (r) => r.comment && containsProfanity(r.comment)
+                          ).length
+                        } تعليق يحتوي على شتائم`
+                      : "لا توجد تعليقات مسيئة"}
                   </p>
                 </div>
                 <Flag className="h-8 w-8 text-red-600" />
@@ -293,6 +314,21 @@ const RatingsManagement = () => {
                     <SelectItem value="3">3 نجوم</SelectItem>
                     <SelectItem value="2">2 نجوم</SelectItem>
                     <SelectItem value="1">1 نجمة</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-40">
+                <Label htmlFor="profanity">المحتوى المسيء</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="جميع الحالات" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الحالات</SelectItem>
+                    <SelectItem value="approved">معتمدة</SelectItem>
+                    <SelectItem value="pending">معلقة</SelectItem>
+                    <SelectItem value="flagged">محتوى مسيء</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -368,7 +404,25 @@ const RatingsManagement = () => {
                       </div>
 
                       {rating.comment && (
-                        <p className="text-gray-700 mb-2">{rating.comment}</p>
+                        <div className="mb-2">
+                          <p className="text-gray-700 mb-1">{rating.comment}</p>
+                          {containsProfanity(rating.comment) && (
+                            <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                              <AlertTriangle className="w-4 h-4 text-red-600" />
+                              <span className="text-sm text-red-700 font-medium">
+                                محتوى مسيء محتمل
+                              </span>
+                              <Badge variant="destructive" className="text-xs">
+                                {getProfanityLevel(rating.comment) === "high"
+                                  ? "عالي"
+                                  : getProfanityLevel(rating.comment) ===
+                                    "medium"
+                                  ? "متوسط"
+                                  : "منخفض"}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -405,6 +459,29 @@ const RatingsManagement = () => {
                         <Eye className="w-4 h-4" />
                         التفاصيل
                       </Button>
+
+                      {rating.comment && containsProfanity(rating.comment) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const report = generateProfanityReport(
+                              rating.comment!
+                            );
+                            toast({
+                              title: "تقرير المحتوى المسيء",
+                              description: `تم العثور على ${
+                                report.profanityCount
+                              } كلمة مسيئة: ${report.words.join(", ")}`,
+                              variant: "destructive",
+                            });
+                          }}
+                          className="flex items-center gap-2 border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          <Shield className="w-4 h-4" />
+                          تحليل المحتوى
+                        </Button>
+                      )}
 
                       {!rating.is_approved && !rating.is_flagged && (
                         <Button
