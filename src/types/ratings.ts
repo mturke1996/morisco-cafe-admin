@@ -11,6 +11,16 @@ export interface Rating {
   flagged_reason?: string;
   created_at: string;
   updated_at: string;
+  replies?: RatingReply[];
+}
+
+export interface RatingReply {
+  id: string;
+  rating_id: string;
+  reply_text: string;
+  replied_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateRatingData {
@@ -56,4 +66,14 @@ export interface RatingFilters {
   date_from?: string;
   date_to?: string;
   search?: string;
+}
+
+export interface CreateRatingReplyData {
+  rating_id: string;
+  reply_text: string;
+  replied_by?: string;
+}
+
+export interface UpdateRatingReplyData {
+  reply_text: string;
 }

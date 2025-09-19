@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ import {
   AlertCircle,
   CheckCircle,
   X,
+  Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -81,6 +82,7 @@ export default function DailyOffersManagement() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingOffer, setEditingOffer] = useState<DailyOffer | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<
@@ -220,7 +222,7 @@ export default function DailyOffersManagement() {
     }
   };
 
-  const handleToggleStatus = async (offer: DailyOffer) => {
+  const handleToggleStatus = useCallback(async (offer: DailyOffer) => {
     try {
       const { error } = await supabase
         .from("daily_offers")
@@ -235,9 +237,9 @@ export default function DailyOffersManagement() {
       console.error("Error updating offer:", error);
       toast.error("خطأ في تحديث العرض");
     }
-  };
+  }, []);
 
-  const handleDeleteOffer = async (offerId: string) => {
+  const handleDeleteOffer = useCallback(async (offerId: string) => {
     try {
       const { error } = await supabase
         .from("daily_offers")
@@ -252,7 +254,61 @@ export default function DailyOffersManagement() {
       console.error("Error deleting offer:", error);
       toast.error("خطأ في حذف العرض");
     }
-  };
+  }, []);
+
+  const handleEditOffer = useCallback((offer: DailyOffer) => {
+    setEditingOffer(offer);
+    setFormData({
+      title: offer.title,
+      description: offer.description || "",
+      original_price: offer.original_price,
+      offer_price: offer.offer_price,
+      image_url: offer.image_url || "",
+      is_active: offer.is_active,
+      end_date: offer.end_date ? offer.end_date.split("T")[0] : "",
+    });
+    setShowEditDialog(true);
+  }, []);
+
+  const handleUpdateOffer = useCallback(async () => {
+    if (!editingOffer) return;
+
+    try {
+      const { error } = await supabase
+        .from("daily_offers")
+        .update({
+          title: formData.title,
+          description: formData.description,
+          original_price: formData.original_price,
+          offer_price: formData.offer_price,
+          discount_percentage:
+            formData.original_price > 0
+              ? Math.round(
+                  ((formData.original_price - formData.offer_price) /
+                    formData.original_price) *
+                    100
+                )
+              : 0,
+          image_url: formData.image_url,
+          is_active: formData.is_active,
+          end_date: formData.end_date
+            ? new Date(formData.end_date).toISOString()
+            : null,
+        })
+        .eq("id", editingOffer.id);
+
+      if (error) throw error;
+
+      toast.success("تم تحديث العرض بنجاح");
+      setShowEditDialog(false);
+      setEditingOffer(null);
+      resetForm();
+      fetchOffers();
+    } catch (error) {
+      console.error("Error updating offer:", error);
+      toast.error("خطأ في تحديث العرض");
+    }
+  }, [editingOffer, formData]);
 
   const resetForm = () => {
     setFormData({
@@ -564,7 +620,10 @@ export default function DailyOffersManagement() {
       {/* Offers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredOffers.map((offer) => (
-          <Card key={offer.id} className="relative overflow-hidden">
+          <Card
+            key={offer.id}
+            className="relative overflow-hidden bg-gradient-to-br from-white to-gray-50 hover:shadow-xl hover:scale-105 transition-all duration-300"
+          >
             <CardContent className="p-4">
               {/* Status Badge */}
               <div className="absolute top-2 left-2">
@@ -633,22 +692,29 @@ export default function DailyOffersManagement() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-1 sm:gap-2 pt-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleToggleStatus(offer)}
-                    className="flex-1"
+                    className={`flex-1 h-12 sm:h-10 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation ${
+                      offer.is_active
+                        ? "bg-red-500 hover:bg-red-600 text-white active:bg-red-700"
+                        : "bg-green-500 hover:bg-green-600 text-white active:bg-green-700"
+                    }`}
+                    title={
+                      offer.is_active ? "إلغاء تفعيل العرض" : "تفعيل العرض"
+                    }
                   >
                     {offer.is_active ? (
                       <>
-                        <EyeOff className="w-4 h-4 mr-1" />
-                        إلغاء التفعيل
+                        <EyeOff className="w-5 h-5 sm:w-4 sm:h-4 mr-1" />
+                        <span className="hidden sm:inline">إلغاء التفعيل</span>
                       </>
                     ) : (
                       <>
-                        <Eye className="w-4 h-4 mr-1" />
-                        تفعيل
+                        <Eye className="w-5 h-5 sm:w-4 sm:h-4 mr-1" />
+                        <span className="hidden sm:inline">تفعيل</span>
                       </>
                     )}
                   </Button>
@@ -656,10 +722,21 @@ export default function DailyOffersManagement() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDeleteOffer(offer.id)}
-                    className="text-red-600 hover:text-red-700"
+                    onClick={() => handleEditOffer(offer)}
+                    className="h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-lg bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:bg-blue-700"
+                    title="تعديل العرض"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Edit className="w-5 h-5 sm:w-4 sm:h-4" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteOffer(offer.id)}
+                    className="h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-lg bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:bg-red-700"
+                    title="حذف العرض"
+                  >
+                    <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
               </div>
@@ -688,6 +765,203 @@ export default function DailyOffersManagement() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Offer Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-blue-500" />
+              تعديل العرض - {editingOffer?.title}
+            </DialogTitle>
+          </DialogHeader>
+
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">البيانات الأساسية</TabsTrigger>
+              <TabsTrigger value="items">عناصر العرض</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-title">عنوان العرض *</Label>
+                  <Input
+                    id="edit-title"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                    placeholder="عنوان العرض"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-description">وصف العرض</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="وصف العرض"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-original-price">
+                    السعر الأصلي (د.ل) *
+                  </Label>
+                  <Input
+                    id="edit-original-price"
+                    type="number"
+                    value={formData.original_price}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        original_price: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    placeholder="0"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-offer-price">سعر العرض (د.ل) *</Label>
+                  <Input
+                    id="edit-offer-price"
+                    type="number"
+                    value={formData.offer_price}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        offer_price: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    placeholder="0"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-image-url">رابط الصورة</Label>
+                  <Input
+                    id="edit-image-url"
+                    value={formData.image_url}
+                    onChange={(e) =>
+                      setFormData({ ...formData, image_url: e.target.value })
+                    }
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-end-date">تاريخ انتهاء العرض</Label>
+                  <Input
+                    id="edit-end-date"
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) =>
+                      setFormData({ ...formData, end_date: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit-is-active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_active: checked })
+                  }
+                />
+                <Label htmlFor="edit-is-active">تفعيل العرض</Label>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="items" className="space-y-4">
+              <div>
+                <Label>إضافة عناصر للعرض</Label>
+                <Select onValueChange={addMenuItem}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر عنصر من القائمة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {menuItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name} - {item.price || "أسعار متعددة"} د.ل
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedItems.length > 0 && (
+                <div className="space-y-2">
+                  <Label>عناصر العرض المحددة</Label>
+                  {selectedItems.map((item) => {
+                    const menuItem = menuItems.find(
+                      (mi) => mi.id === item.menu_item_id
+                    );
+                    return (
+                      <div
+                        key={item.menu_item_id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{menuItem?.name}</p>
+                          <p className="text-sm text-gray-600">
+                            {menuItem?.category}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`edit-qty-${item.menu_item_id}`}>
+                            الكمية:
+                          </Label>
+                          <Input
+                            id={`edit-qty-${item.menu_item_id}`}
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateQuantity(
+                                item.menu_item_id,
+                                parseInt(e.target.value) || 1
+                              )
+                            }
+                            className="w-20"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeMenuItem(item.menu_item_id)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleUpdateOffer}
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:scale-95"
+            >
+              <Save className="w-4 h-4 ml-1" />
+              حفظ التغييرات
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

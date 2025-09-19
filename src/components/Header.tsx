@@ -60,10 +60,10 @@ const Header = () => {
 
   return (
     <header
-      className="bg-gradient-to-l from-emerald-500 via-emerald-600 to-emerald-700 shadow-2xl border-b-2 border-emerald-800 sticky top-0 z-50 backdrop-blur-md"
+      className="bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-700 shadow-2xl border-b-2 border-emerald-800 sticky top-0 z-50 backdrop-blur-md"
       dir="rtl"
     >
-      <div className="container mx-auto px-4 py-3">
+      <div className="w-full px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Coffee Shop Name & Logo - Right side */}
           <div className="flex items-center gap-6">
@@ -116,7 +116,7 @@ const Header = () => {
               }}
               className="bg-emerald-800/40 hover:bg-emerald-800/60 text-emerald-100 backdrop-blur-lg border-2 border-emerald-400/30 hover:border-emerald-300/50 rounded-xl px-6 py-3 font-bold text-sm transition-all duration-300 transform hover:scale-105 hover:shadow-xl group shadow-lg"
             >
-              <Home className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform duration-300" />
+              <Home className="h-5 w-5 ml-2 group-hover:rotate-12 transition-transform duration-300" />
               <span className="font-cairo">الرئيسية</span>
             </Button>
 
@@ -152,7 +152,7 @@ const Header = () => {
               onClick={handleSignOut}
               className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-xl font-bold text-sm px-6 py-3 rounded-xl transform hover:scale-105 transition-all duration-300 border-2 border-red-400 hover:border-red-300 group"
             >
-              <LogOut className="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform duration-300" />
+              <LogOut className="h-4 w-4 ml-2 group-hover:rotate-12 transition-transform duration-300" />
               <span className="font-cairo">خروج</span>
             </Button>
           </div>
@@ -206,7 +206,7 @@ const Header = () => {
                   }}
                   className="w-full bg-emerald-800/30 hover:bg-emerald-800/50 text-emerald-100 font-bold rounded-2xl border border-emerald-400/20 hover:border-emerald-300/40 transition-all duration-300 py-3 mb-4"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="h-4 w-4 ml-2" />
                   <span className="font-cairo">رجوع</span>
                 </Button>
               )}
@@ -226,7 +226,7 @@ const Header = () => {
                 onClick={handleSignOut}
                 className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold rounded-2xl transform hover:scale-105 transition-all duration-300 border-2 border-red-400 py-3 shadow-xl"
               >
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="h-4 w-4 ml-2" />
                 <span className="font-cairo">تسجيل الخروج</span>
               </Button>
             </div>

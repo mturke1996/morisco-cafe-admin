@@ -1,40 +1,70 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Rating, CreateRatingData, UpdateRatingData, RatingStats, RatingFilters } from '@/types/ratings';
-import { generateProfanityReport } from '@/utils/profanityFilter';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Rating,
+  CreateRatingData,
+  UpdateRatingData,
+  RatingStats,
+  RatingFilters,
+  RatingReply,
+  CreateRatingReplyData,
+  UpdateRatingReplyData,
+} from "@/types/ratings";
+import { generateProfanityReport } from "@/utils/profanityFilter";
 
 // Hook لجلب التقييمات
 export function useRatings(filters?: RatingFilters) {
   return useQuery({
-    queryKey: ['ratings', filters],
+    queryKey: ["ratings", filters],
     queryFn: async () => {
       let query = supabase
-        .from('ratings')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("ratings")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (filters?.rating) {
-        query = query.eq('rating', filters.rating);
+        query = query.eq("rating", filters.rating);
       }
       if (filters?.is_approved !== undefined) {
-        query = query.eq('is_approved', filters.is_approved);
+        query = query.eq("is_approved", filters.is_approved);
       }
       if (filters?.is_flagged !== undefined) {
-        query = query.eq('is_flagged', filters.is_flagged);
+        query = query.eq("is_flagged", filters.is_flagged);
       }
       if (filters?.date_from) {
-        query = query.gte('created_at', filters.date_from);
+        query = query.gte("created_at", filters.date_from);
       }
       if (filters?.date_to) {
-        query = query.lte('created_at', filters.date_to);
+        query = query.lte("created_at", filters.date_to);
       }
       if (filters?.search) {
-        query = query.or(`customer_name.ilike.%${filters.search}%,comment.ilike.%${filters.search}%`);
+        query = query.or(
+          `customer_name.ilike.%${filters.search}%,comment.ilike.%${filters.search}%`
+        );
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Rating[];
+
+      // جلب الردود لكل تقييم
+      const ratingsWithReplies = await Promise.all(
+        (data as Rating[]).map(async (rating) => {
+          const { data: replies, error: repliesError } = await supabase
+            .from("rating_replies")
+            .select("*")
+            .eq("rating_id", rating.id)
+            .order("created_at", { ascending: true });
+
+          if (repliesError) {
+            console.error("Error fetching replies:", repliesError);
+            return rating;
+          }
+
+          return { ...rating, replies: replies as RatingReply[] };
+        })
+      );
+
+      return ratingsWithReplies;
     },
   });
 }
@@ -42,11 +72,11 @@ export function useRatings(filters?: RatingFilters) {
 // Hook لجلب إحصائيات التقييمات
 export function useRatingStats() {
   return useQuery({
-    queryKey: ['rating-stats'],
+    queryKey: ["rating-stats"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ratings')
-        .select('rating, is_approved, is_flagged');
+        .from("ratings")
+        .select("rating, is_approved, is_flagged");
 
       if (error) throw error;
 
@@ -62,8 +92,10 @@ export function useRatingStats() {
       let totalRating = 0;
       data.forEach((rating) => {
         totalRating += rating.rating;
-        stats.rating_distribution[rating.rating as keyof typeof stats.rating_distribution]++;
-        
+        stats.rating_distribution[
+          rating.rating as keyof typeof stats.rating_distribution
+        ]++;
+
         if (rating.is_approved) stats.approved_ratings++;
         if (rating.is_flagged) stats.flagged_ratings++;
         if (!rating.is_approved && !rating.is_flagged) stats.pending_ratings++;
@@ -83,15 +115,15 @@ export function useAddRating() {
   return useMutation({
     mutationFn: async (ratingData: CreateRatingData) => {
       // فحص المحتوى المسيء
-      const profanityReport = generateProfanityReport(ratingData.comment || '');
-      
+      const profanityReport = generateProfanityReport(ratingData.comment || "");
+
       const { data, error } = await supabase
-        .from('ratings')
+        .from("ratings")
         .insert({
           ...ratingData,
           is_flagged: profanityReport.contains,
-          flagged_reason: profanityReport.contains 
-            ? `محتوى مسيء: ${profanityReport.words.join(', ')}` 
+          flagged_reason: profanityReport.contains
+            ? `محتوى مسيء: ${profanityReport.words.join(", ")}`
             : null,
           comment: profanityReport.cleaned,
         })
@@ -102,8 +134,8 @@ export function useAddRating() {
       return data as Rating;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ratings'] });
-      queryClient.invalidateQueries({ queryKey: ['rating-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
+      queryClient.invalidateQueries({ queryKey: ["rating-stats"] });
     },
   });
 }
@@ -113,26 +145,29 @@ export function useUpdateRating() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updateData }: { id: string } & UpdateRatingData) => {
+    mutationFn: async ({
+      id,
+      ...updateData
+    }: { id: string } & UpdateRatingData) => {
       // فحص المحتوى المسيء إذا تم تحديث التعليق
       let finalUpdateData = { ...updateData };
-      
+
       if (updateData.comment) {
         const profanityReport = generateProfanityReport(updateData.comment);
         finalUpdateData = {
           ...finalUpdateData,
           is_flagged: profanityReport.contains,
-          flagged_reason: profanityReport.contains 
-            ? `محتوى مسيء: ${profanityReport.words.join(', ')}` 
+          flagged_reason: profanityReport.contains
+            ? `محتوى مسيء: ${profanityReport.words.join(", ")}`
             : null,
           comment: profanityReport.cleaned,
         };
       }
 
       const { data, error } = await supabase
-        .from('ratings')
+        .from("ratings")
         .update(finalUpdateData)
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
@@ -140,8 +175,8 @@ export function useUpdateRating() {
       return data as Rating;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ratings'] });
-      queryClient.invalidateQueries({ queryKey: ['rating-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
+      queryClient.invalidateQueries({ queryKey: ["rating-stats"] });
     },
   });
 }
@@ -152,16 +187,13 @@ export function useDeleteRating() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('ratings')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from("ratings").delete().eq("id", id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ratings'] });
-      queryClient.invalidateQueries({ queryKey: ['rating-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
+      queryClient.invalidateQueries({ queryKey: ["rating-stats"] });
     },
   });
 }
@@ -173,9 +205,9 @@ export function useApproveRating() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
-        .from('ratings')
+        .from("ratings")
         .update({ is_approved: true, is_flagged: false, flagged_reason: null })
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
@@ -183,8 +215,8 @@ export function useApproveRating() {
       return data as Rating;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ratings'] });
-      queryClient.invalidateQueries({ queryKey: ['rating-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
+      queryClient.invalidateQueries({ queryKey: ["rating-stats"] });
     },
   });
 }
@@ -196,9 +228,9 @@ export function useRejectRating() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
-        .from('ratings')
+        .from("ratings")
         .update({ is_approved: false })
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
@@ -206,8 +238,76 @@ export function useRejectRating() {
       return data as Rating;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ratings'] });
-      queryClient.invalidateQueries({ queryKey: ['rating-stats'] });
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
+      queryClient.invalidateQueries({ queryKey: ["rating-stats"] });
+    },
+  });
+}
+
+// Hook لإضافة رد على تقييم
+export function useAddRatingReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (replyData: CreateRatingReplyData) => {
+      const { data, error } = await supabase
+        .from("rating_replies")
+        .insert({
+          ...replyData,
+          replied_by: replyData.replied_by || "موريسكو كافيه",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as RatingReply;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
+    },
+  });
+}
+
+// Hook لتحديث رد على تقييم
+export function useUpdateRatingReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...updateData
+    }: { id: string } & UpdateRatingReplyData) => {
+      const { data, error } = await supabase
+        .from("rating_replies")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as RatingReply;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
+    },
+  });
+}
+
+// Hook لحذف رد على تقييم
+export function useDeleteRatingReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("rating_replies")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ratings"] });
     },
   });
 }

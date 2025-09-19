@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Calendar,
   Clock,
@@ -12,6 +12,8 @@ import {
   Eye,
   Edit,
   History,
+  Minus,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,178 +77,392 @@ interface AttendanceRecord {
   early_departure: boolean;
   deduction_reason: string | null;
   notes: string | null;
+  is_double_shift?: boolean;
   employees: Employee;
 }
 
-const AttendanceCard = ({
-  record,
-  onEdit,
-  onViewProfile,
-  onManage,
-}: {
-  record: AttendanceRecord;
-  onEdit: (record: AttendanceRecord) => void;
-  onViewProfile: (id: string) => void;
-  onManage: (record: AttendanceRecord) => void;
-}) => {
-  const calculateWorkingHours = (
-    checkIn: string | null,
-    checkOut: string | null
-  ) => {
-    if (!checkIn) return "0";
+const AttendanceCard = React.memo(
+  ({
+    record,
+    onEdit,
+    onViewProfile,
+    onManage,
+    onDelete,
+    selectedDate,
+  }: {
+    record: AttendanceRecord;
+    onEdit: (record: AttendanceRecord) => void;
+    onViewProfile: (id: string) => void;
+    onManage: (record: AttendanceRecord) => void;
+    onDelete: (record: AttendanceRecord) => void;
+    selectedDate: string;
+  }) => {
+    const [todayWithdrawals, setTodayWithdrawals] = useState<any[]>([]);
+    const [loadingWithdrawals, setLoadingWithdrawals] = useState(false);
 
-    const start = new Date(checkIn);
-    const end = checkOut ? new Date(checkOut) : new Date();
-    const diffInMs = end.getTime() - start.getTime();
-    const diffInHours = diffInMs / (1000 * 60 * 60);
+    // جلب السحوبات للموظف في التاريخ المحدد
+    const fetchTodayWithdrawals = useCallback(async () => {
+      setLoadingWithdrawals(true);
+      try {
+        const { data, error } = await supabase
+          .from("employee_withdrawals")
+          .select("*")
+          .eq("employee_id", record.employee_id)
+          .eq("withdrawal_date", selectedDate)
+          .order("created_at", { ascending: false });
 
-    return diffInHours.toFixed(1);
-  };
+        if (error) throw error;
+        setTodayWithdrawals(data || []);
+      } catch (error) {
+        console.error("خطأ في جلب السحوبات:", error);
+      } finally {
+        setLoadingWithdrawals(false);
+      }
+    }, [record.employee_id, selectedDate]);
 
-  const netEarnings =
-    record.daily_wage_earned +
-    (record.bonus_amount || 0) -
-    (record.deduction_amount || 0);
+    useEffect(() => {
+      fetchTodayWithdrawals();
+    }, [record.employee_id, selectedDate]);
+    const calculateWorkingHours = useCallback(
+      (checkIn: string | null, checkOut: string | null) => {
+        if (!checkIn) return "0";
 
-  return (
-    <Card className="mb-3">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+        const start = new Date(checkIn);
+        const end = checkOut ? new Date(checkOut) : new Date();
+        const diffInMs = end.getTime() - start.getTime();
+        const diffInHours = diffInMs / (1000 * 60 * 60);
+
+        return diffInHours.toFixed(1);
+      },
+      []
+    );
+
+    const netEarnings = useMemo(() => {
+      const baseWage = record.daily_wage_earned;
+      const multiplier = record.is_double_shift ? 2 : 1;
+      const adjustedWage = baseWage * multiplier;
+
+      console.log(
+        `Employee ${record.employees.name}: baseWage=${baseWage}, is_double_shift=${record.is_double_shift}, multiplier=${multiplier}, adjustedWage=${adjustedWage}`
+      );
+
+      return (
+        adjustedWage +
+        (record.bonus_amount || 0) -
+        (record.deduction_amount || 0)
+      );
+    }, [
+      record.daily_wage_earned,
+      record.bonus_amount,
+      record.deduction_amount,
+      record.is_double_shift,
+    ]);
+
+    return (
+      <Card className="mb-3">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewProfile(record.employee_id)}
+                className="p-0 h-auto text-primary hover:text-primary/80"
+              >
+                <User className="w-4 h-4 ml-1" />
+                <span className="font-medium">{record.employees.name}</span>
+              </Button>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Badge
+                variant={
+                  record.status === "present" ? "default" : "destructive"
+                }
+                className="text-xs"
+              >
+                {record.status === "present" ? "حاضر" : "غائب"}
+              </Badge>
+              {record.is_double_shift && (
+                <Badge
+                  variant="default"
+                  className="text-xs bg-orange-500 text-white"
+                >
+                  ورديتين (×2)
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground mb-3">
+            {record.employees.position}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">وقت الدخول</p>
+              <p className="text-sm font-medium">
+                {record.check_in
+                  ? new Date(record.check_in).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">ساعات العمل</p>
+              <p className="text-sm font-medium">
+                {calculateWorkingHours(record.check_in, record.check_out)} ساعة
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">
+                {record.is_double_shift ? "اليومية (×2)" : "اليومية"}
+              </p>
+              <p className="text-sm font-medium text-green-600">
+                {record.is_double_shift
+                  ? `${(record.daily_wage_earned * 2).toFixed(2)} د.ل`
+                  : `${record.daily_wage_earned || 0} د.ل`}
+              </p>
+              {record.is_double_shift && (
+                <p className="text-xs text-muted-foreground">
+                  ({record.daily_wage_earned} × 2)
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">صافي الكسب</p>
+              <p className="text-sm font-medium text-primary">
+                {netEarnings.toFixed(2)} د.ل
+              </p>
+            </div>
+          </div>
+
+          {(record.deduction_amount > 0 || record.bonus_amount > 0) && (
+            <div className="grid grid-cols-2 gap-4 mb-3 text-xs">
+              {record.deduction_amount > 0 && (
+                <div>
+                  <p className="text-muted-foreground mb-1">خصم</p>
+                  <p className="text-red-600">-{record.deduction_amount} د.ل</p>
+                  {record.deduction_reason && (
+                    <p className="text-muted-foreground text-xs">
+                      {record.deduction_reason}
+                    </p>
+                  )}
+                </div>
+              )}
+              {record.bonus_amount > 0 && (
+                <div>
+                  <p className="text-muted-foreground mb-1">مكافأة</p>
+                  <p className="text-green-600">+{record.bonus_amount} د.ل</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {record.early_departure && (
+            <div className="mb-3">
+              <Badge variant="destructive" className="text-xs">
+                انصراف مبكر
+              </Badge>
+            </div>
+          )}
+
+          {/* Today's Withdrawals */}
+          {loadingWithdrawals ? (
+            <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                <span className="text-sm text-gray-600">
+                  جاري تحميل السحوبات...
+                </span>
+              </div>
+            </div>
+          ) : todayWithdrawals.length > 0 ? (
+            <div className="mb-3 p-4 bg-gradient-to-r from-red-50 to-orange-50 rounded-xl border-2 border-red-200 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <Minus className="w-4 h-4 text-red-600" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-red-800">
+                      السحوبات المسجلة
+                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge
+                        variant="destructive"
+                        className="text-xs px-2 py-1"
+                      >
+                        {todayWithdrawals.length} سحب
+                      </Badge>
+                      <span className="text-xs text-red-600">
+                        {selectedDate === new Date().toISOString().split("T")[0]
+                          ? "اليوم"
+                          : new Date(selectedDate).toLocaleDateString("en-US")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-red-700">
+                    {todayWithdrawals
+                      .reduce((sum, w) => sum + w.amount, 0)
+                      .toFixed(2)}{" "}
+                    د.ل
+                  </div>
+                  <div className="text-xs text-red-500 font-medium">
+                    إجمالي المسحوبات
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 max-h-24 overflow-y-auto">
+                {todayWithdrawals.map((withdrawal, index) => (
+                  <div
+                    key={withdrawal.id}
+                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-red-100 hover:shadow-sm transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center text-xs font-bold text-red-600">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-red-700 text-sm">
+                            {withdrawal.amount.toFixed(2)} د.ل
+                          </span>
+                          <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                        </div>
+                        {withdrawal.notes && (
+                          <div className="text-xs text-gray-600 mt-1 max-w-32 truncate">
+                            {withdrawal.notes}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-medium text-gray-700">
+                        {new Date(withdrawal.created_at).toLocaleTimeString(
+                          "en-US",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(withdrawal.created_at).toLocaleDateString(
+                          "en-US"
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mb-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-green-800">
+                    لا توجد سحوبات
+                  </span>
+                  <div className="text-xs text-green-600">
+                    {selectedDate === new Date().toISOString().split("T")[0]
+                      ? "لم يسحب الموظف أي مبلغ اليوم"
+                      : `لم يسحب الموظف أي مبلغ في ${new Date(
+                          selectedDate
+                        ).toLocaleDateString("en-US")}`}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={() => onViewProfile(record.employee_id)}
-              className="p-0 h-auto text-primary hover:text-primary/80"
+              onClick={() => {
+                console.log(
+                  "Navigating to employee profile:",
+                  record.employee_id
+                );
+                onViewProfile(record.employee_id);
+              }}
+              className="h-10 bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 hover:from-purple-100 hover:to-pink-100 border-purple-200 hover:border-purple-300 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+              title={`عرض بروفايل ${record.employees.name}`}
             >
-              <User className="w-4 h-4 ml-1" />
-              <span className="font-medium">{record.employees.name}</span>
+              <Eye className="w-4 h-4" />
+              <span className="hidden sm:inline">عرض</span>
+              <span className="sm:hidden">عرض</span>
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(record)}
+              className="h-10 bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 hover:from-blue-100 hover:to-cyan-100 border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <Edit className="w-4 h-4" />
+              <span className="hidden sm:inline">تعديل</span>
+              <span className="sm:hidden">تعديل</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(record)}
+              className="h-10 bg-gradient-to-r from-red-50 to-rose-50 text-red-700 hover:from-red-100 hover:to-rose-100 border-red-200 hover:border-red-300 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+              title={`حذف سجل الحضور لـ ${record.employees.name}`}
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden sm:inline">حذف</span>
+              <span className="sm:hidden">حذف</span>
+            </Button>
+            <div className="col-span-2 sm:col-span-1">
+              <QuickWithdrawalButton
+                employeeId={record.employee_id}
+                employeeName={record.employees.name}
+                currentBalance={
+                  record.daily_wage_earned +
+                  (record.bonus_amount || 0) -
+                  (record.deduction_amount || 0)
+                }
+                selectedDate={selectedDate}
+                onWithdrawalComplete={() => {
+                  // تحديث قائمة السحوبات بعد السحب
+                  fetchTodayWithdrawals();
+                }}
+                size="sm"
+                className="w-full h-10 text-sm font-medium"
+              />
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onManage(record)}
+                className="w-full h-10 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 hover:from-green-100 hover:to-emerald-100 border-green-200 hover:border-green-300 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">إدارة</span>
+                <span className="sm:hidden">إدارة</span>
+              </Button>
+            </div>
           </div>
-          <Badge
-            variant={record.status === "present" ? "default" : "destructive"}
-            className="text-xs"
-          >
-            {record.status === "present" ? "حاضر" : "غائب"}
-          </Badge>
-        </div>
+        </CardContent>
+      </Card>
+    );
+  }
+);
 
-        <div className="text-sm text-muted-foreground mb-3">
-          {record.employees.position}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-3">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">وقت الدخول</p>
-            <p className="text-sm font-medium">
-              {record.check_in
-                ? new Date(record.check_in).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "-"}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">ساعات العمل</p>
-            <p className="text-sm font-medium">
-              {calculateWorkingHours(record.check_in, record.check_out)} ساعة
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-3">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">اليومية</p>
-            <p className="text-sm font-medium text-green-600">
-              {record.daily_wage_earned || 0} د.ل
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">صافي الكسب</p>
-            <p className="text-sm font-medium text-primary">
-              {netEarnings.toFixed(2)} د.ل
-            </p>
-          </div>
-        </div>
-
-        {(record.deduction_amount > 0 || record.bonus_amount > 0) && (
-          <div className="grid grid-cols-2 gap-4 mb-3 text-xs">
-            {record.deduction_amount > 0 && (
-              <div>
-                <p className="text-muted-foreground mb-1">خصم</p>
-                <p className="text-red-600">-{record.deduction_amount} د.ل</p>
-                {record.deduction_reason && (
-                  <p className="text-muted-foreground text-xs">
-                    {record.deduction_reason}
-                  </p>
-                )}
-              </div>
-            )}
-            {record.bonus_amount > 0 && (
-              <div>
-                <p className="text-muted-foreground mb-1">مكافأة</p>
-                <p className="text-green-600">+{record.bonus_amount} د.ل</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {record.early_departure && (
-          <div className="mb-3">
-            <Badge variant="destructive" className="text-xs">
-              انصراف مبكر
-            </Badge>
-          </div>
-        )}
-
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewProfile(record.employee_id)}
-            className="text-xs h-8"
-          >
-            <Eye className="w-3 h-3 ml-1" />
-            عرض
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(record)}
-            className="text-xs h-8"
-          >
-            <Edit className="w-3 h-3 ml-1" />
-            تعديل
-          </Button>
-          <QuickWithdrawalButton
-            employeeId={record.employee_id}
-            employeeName={record.employees.name}
-            currentBalance={
-              record.daily_wage_earned +
-              (record.bonus_amount || 0) -
-              (record.deduction_amount || 0)
-            }
-            onWithdrawalComplete={() => {
-              // يمكن إضافة تحديث البيانات هنا إذا لزم الأمر
-            }}
-            size="sm"
-            className="text-xs h-8"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onManage(record)}
-            className="text-xs h-8 bg-blue-50 text-blue-700 hover:bg-blue-100"
-          >
-            <User className="w-3 h-3 ml-1" />
-            إدارة
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+AttendanceCard.displayName = "AttendanceCard";
 
 const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(
@@ -330,6 +546,7 @@ const Attendance = () => {
           early_departure,
           deduction_reason,
           notes,
+          is_double_shift,
           employees!attendance_employee_id_fkey (
             id,
             name,
@@ -342,7 +559,40 @@ const Attendance = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setAttendanceRecords(data || []);
+
+      // تحديد الورديتين ببساطة
+      const recordsWithShiftType = (data || []).map((record) => {
+        let isDoubleShift = record.is_double_shift || false;
+
+        // إذا لم يكن محفوظ في قاعدة البيانات، احسبه بناءً على الأوقات
+        if (!record.is_double_shift && record.check_in && record.check_out) {
+          const checkInTime = new Date(record.check_in).getHours();
+          const checkOutTime = new Date(record.check_out).getHours();
+
+          console.log(
+            `Employee ${record.employee_id}: Check-in at ${checkInTime}, Check-out at ${checkOutTime}`
+          );
+
+          // إذا كان الحضور صباحاً (قبل 12) والانصراف مساءً (بعد 4) = ورديتين
+          if (checkInTime < 12 && checkOutTime >= 16) {
+            isDoubleShift = true;
+            console.log(
+              `✅ Double shift detected for employee ${record.employee_id}`
+            );
+          }
+        }
+
+        console.log(
+          `Final is_double_shift for employee ${record.employee_id}: ${isDoubleShift} (from DB: ${record.is_double_shift})`
+        );
+
+        return {
+          ...record,
+          is_double_shift: isDoubleShift,
+        };
+      });
+
+      setAttendanceRecords(recordsWithShiftType);
     } catch (error) {
       console.error("خطأ في جلب سجلات الحضور:", error);
       toast({
@@ -410,12 +660,24 @@ const Attendance = () => {
             updateData.check_out = new Date().toISOString();
         }
 
+        // تحديد الورديتين بناءً على اختيار المستخدم
+        if (selectedShift === "both") {
+          updateData.is_double_shift = true;
+          console.log(
+            `Setting is_double_shift = true for employee ${employeeId}`
+          );
+        }
+
+        console.log(`Updating attendance record with data:`, updateData);
+
         const { error } = await supabase
           .from("attendance")
           .update(updateData)
           .eq("id", existingRecord.id);
 
         if (error) throw error;
+
+        // تم حفظ is_double_shift في قاعدة البيانات
 
         toast({
           title: "تم بنجاح",
@@ -433,6 +695,7 @@ const Attendance = () => {
           employee_id: employeeId,
           date: selectedDate,
           status: "present",
+          is_double_shift: selectedShift === "both",
         };
 
         if (selectedShift === "morning" || selectedShift === "both") {
@@ -441,6 +704,8 @@ const Attendance = () => {
         if (selectedShift === "evening" || selectedShift === "both") {
           insertData.check_out = new Date().toISOString();
         }
+
+        console.log(`Creating new attendance record with data:`, insertData);
 
         const { error } = await supabase.from("attendance").insert(insertData);
 
@@ -525,12 +790,43 @@ const Attendance = () => {
     setIsManagementModalOpen(true);
   };
 
+  const handleDeleteRecord = async (record: AttendanceRecord) => {
+    if (
+      !confirm(`هل أنت متأكد من حذف سجل الحضور لـ ${record.employees.name}؟`)
+    ) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("attendance")
+        .delete()
+        .eq("id", record.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "تم الحذف",
+        description: `تم حذف سجل الحضور لـ ${record.employees.name} بنجاح`,
+      });
+
+      await fetchAttendanceRecords();
+    } catch (error) {
+      console.error("خطأ في حذف السجل:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف السجل",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAttendanceUpdated = () => {
     fetchAttendanceRecords();
   };
 
   const handleViewProfile = (employeeId: string) => {
-    navigate(`/employee-profile/${employeeId}`);
+    navigate(`/employees/${employeeId}`);
   };
 
   const filteredRecords =
@@ -1348,6 +1644,8 @@ const Attendance = () => {
                         onEdit={handleEditRecord}
                         onViewProfile={handleViewProfile}
                         onManage={handleManageRecord}
+                        onDelete={handleDeleteRecord}
+                        selectedDate={selectedDate}
                       />
                     ))}
                   </div>

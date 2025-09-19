@@ -1,5 +1,4 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -12,7 +11,7 @@
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
- 
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
@@ -21,7 +20,7 @@
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 84% 4.9%;
- 
+
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
@@ -45,7 +44,7 @@
 
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
- 
+
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
@@ -54,7 +53,7 @@
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
- 
+
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.9%;
 
@@ -63,7 +62,7 @@
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
 
@@ -77,12 +76,14 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Cairo', 'Tajawal', 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+    font-family: "Cairo", "Tajawal", "Segoe UI", "Tahoma", "Geneva", "Verdana",
+      sans-serif;
   }
 }
 
 .arabic-font {
-  font-family: 'Cairo', 'Tajawal', 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+  font-family: "Cairo", "Tajawal", "Segoe UI", "Tahoma", "Geneva", "Verdana",
+    sans-serif;
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -98,12 +99,20 @@
 
 /* تحسينات الأزرار */
 .btn-gradient {
-  background: linear-gradient(135deg, hsl(158 64% 52%) 0%, hsl(160 84% 39%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(158 64% 52%) 0%,
+    hsl(160 84% 39%) 100%
+  );
   transition: all 0.3s ease;
 }
 
 .btn-gradient:hover {
-  background: linear-gradient(135deg, hsl(158 64% 42%) 0%, hsl(160 84% 29%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(158 64% 42%) 0%,
+    hsl(160 84% 29%) 100%
+  );
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
 }
@@ -123,11 +132,20 @@
 
 /* خلفيات متدرجة */
 .bg-cafe {
-  background: linear-gradient(135deg, hsl(151 81% 96%) 0%, hsl(166 76% 97%) 50%, hsl(0 0% 100%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(151 81% 96%) 0%,
+    hsl(166 76% 97%) 50%,
+    hsl(0 0% 100%) 100%
+  );
 }
 
 .bg-cafe-dark {
-  background: linear-gradient(135deg, hsl(164 96% 15%) 0%, hsl(166 64% 23%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(164 96% 15%) 0%,
+    hsl(166 64% 23%) 100%
+  );
 }
 
 /* إصلاح مشاكل الاتجاه */
@@ -141,24 +159,25 @@
 }
 
 /* إصلاح عرض الأرقام - إجبار الأرقام الإنجليزية */
-.number-display, .stats-number {
-  font-family: 'Roboto', 'Arial', sans-serif !important;
+.number-display,
+.stats-number {
+  font-family: "Roboto", "Arial", sans-serif !important;
   direction: ltr !important;
   text-align: left !important;
-  font-feature-settings: 'lnum' 1;
+  font-feature-settings: "lnum" 1;
   font-variant-numeric: lining-nums;
 }
 
 /* إعداد خاص للإحصائيات */
 .stat-value {
-  font-family: 'Roboto', 'Arial', sans-serif !important;
+  font-family: "Roboto", "Arial", sans-serif !important;
   direction: ltr !important;
   display: inline-block !important;
   unicode-bidi: embed !important;
 }
 
 input[type="number"] {
-  font-family: 'Roboto', 'Arial', sans-serif;
+  font-family: "Roboto", "Arial", sans-serif;
   direction: ltr !important;
 }
 
@@ -173,15 +192,20 @@ input[type="number"] {
 }
 
 /* تحسينات الخطوط العربية */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Cairo', 'Tajawal', sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Cairo", "Tajawal", sans-serif;
 }
 
 .font-arabic {
-  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-family: "Cairo", "Tajawal", sans-serif;
 }
 
 .font-arabic-bold {
-  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-family: "Cairo", "Tajawal", sans-serif;
   font-weight: 700;
 }

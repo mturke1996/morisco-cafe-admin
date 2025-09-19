@@ -26,7 +26,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <SidebarInset className="flex-1">
+        <SidebarInset className="flex-1" dir="rtl">
           <Header />
           <div className="flex-1 bg-gradient-to-br from-background via-muted/30 to-accent/5">
             {children}

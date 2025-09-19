@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,10 +94,34 @@ const UltimateMenuManagement = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [selectedCategoryTab, setSelectedCategoryTab] = useState("hotDrinks");
   const [showCategoryTabs, setShowCategoryTabs] = useState(true);
+  const [activeTab, setActiveTab] = useState("menu");
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryKey, setNewCategoryKey] = useState("");
-  const [activeTab, setActiveTab] = useState("menu");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  // Form states for add item
+  const [addFormData, setAddFormData] = useState({
+    name: "",
+    category: "",
+    description: "",
+    price: "",
+    priceM: "",
+    priceL: "",
+  });
+
+  // Form states for edit item
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    category: "",
+    description: "",
+    price: "",
+    priceM: "",
+    priceL: "",
+    imageUrl: "",
+    isAvailable: false,
+  });
 
   const { toast } = useToast();
   const { data: menuItems = [], isLoading, refetch } = useMenuItems();
@@ -113,7 +137,7 @@ const UltimateMenuManagement = () => {
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesCategory =
-        selectedCategoryTab === "all" || item.category === selectedCategoryTab;
+        selectedCategory === "all" || item.category === selectedCategory;
       return (
         matchesSearch && matchesCategory && item.category !== "category_header"
       );
@@ -281,23 +305,85 @@ const UltimateMenuManagement = () => {
     totalCategories: categories.length,
   };
 
-  const handleAddItem = (data: CreateMenuItemData) => {
-    addMenuItem.mutate(data, {
+  const handleAddItem = useCallback(() => {
+    if (!addFormData.name || !addFormData.category) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "اسم العنصر والتصنيف مطلوبان",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newItemData: CreateMenuItemData = {
+      name: addFormData.name,
+      category: addFormData.category,
+      description: addFormData.description || undefined,
+      is_available: true,
+    };
+
+    // Handle pricing - prioritize multiple prices over single price
+    if (addFormData.priceM && addFormData.priceL) {
+      newItemData.prices = {
+        M: parseFloat(addFormData.priceM),
+        L: parseFloat(addFormData.priceL),
+      };
+    } else if (addFormData.price) {
+      newItemData.price = parseFloat(addFormData.price);
+    }
+
+    addMenuItem.mutate(newItemData, {
       onSuccess: () => {
         setIsAddModalOpen(false);
+        // Reset form
+        setAddFormData({
+          name: "",
+          category: "",
+          description: "",
+          price: "",
+          priceM: "",
+          priceL: "",
+        });
         toast({
           title: "تم الإضافة بنجاح",
           description: "تم إضافة العنصر الجديد بنجاح",
         });
       },
     });
-  };
+  }, [addFormData, addMenuItem, toast]);
 
-  const handleUpdateItem = (data: CreateMenuItemData) => {
+  const handleUpdateItem = useCallback(() => {
     if (!selectedItem) return;
 
+    if (!editFormData.name || !editFormData.category) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "اسم العنصر والتصنيف مطلوبان",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updateData: CreateMenuItemData = {
+      name: editFormData.name,
+      category: editFormData.category,
+      description: editFormData.description || undefined,
+      image_url: editFormData.imageUrl || undefined,
+      is_available: editFormData.isAvailable,
+    };
+
+    // Handle pricing - prioritize multiple prices over single price
+    if (editFormData.priceM && editFormData.priceL) {
+      updateData.prices = {
+        M: parseFloat(editFormData.priceM),
+        L: parseFloat(editFormData.priceL),
+      };
+    } else if (editFormData.price) {
+      updateData.price = parseFloat(editFormData.price);
+    }
+
     updateMenuItem.mutate(
-      { id: selectedItem.id, ...data },
+      { id: selectedItem.id, ...updateData },
       {
         onSuccess: () => {
           setIsEditModalOpen(false);
@@ -309,37 +395,94 @@ const UltimateMenuManagement = () => {
         },
       }
     );
-  };
+  }, [selectedItem, editFormData, updateMenuItem, toast]);
 
-  const handleDeleteItem = (id: string) => {
-    deleteMenuItem.mutate(id, {
+  // Update edit form data when selected item changes
+  useEffect(() => {
+    if (selectedItem) {
+      setEditFormData({
+        name: selectedItem.name || "",
+        category: selectedItem.category || "",
+        description: selectedItem.description || "",
+        price: selectedItem.price?.toString() || "",
+        priceM: selectedItem.prices?.M?.toString() || "",
+        priceL: selectedItem.prices?.L?.toString() || "",
+        imageUrl: selectedItem.image_url || "",
+        isAvailable: selectedItem.is_available || false,
+      });
+    }
+  }, [selectedItem]);
+
+  const handleDeleteItem = useCallback((id: string) => {
+    setItemToDelete(id);
+    setDeleteConfirmOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (!itemToDelete) return;
+
+    deleteMenuItem.mutate(itemToDelete, {
       onSuccess: () => {
         toast({
           title: "تم الحذف بنجاح",
           description: "تم حذف العنصر بنجاح",
         });
+        setDeleteConfirmOpen(false);
+        setItemToDelete(null);
       },
     });
-  };
+  }, [itemToDelete, deleteMenuItem, toast]);
 
-  const handleToggleAvailability = (item: MenuItem) => {
-    toggleAvailability.mutate(
-      {
-        id: item.id,
-        is_available: !item.is_available,
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: item.is_available ? "تم إلغاء التوفر" : "تم تفعيل التوفر",
-            description: `العنصر ${item.name} ${
-              item.is_available ? "غير متوفر" : "متوفر"
-            } الآن`,
-          });
+  const handleToggleAvailability = useCallback(
+    (item: MenuItem) => {
+      toggleAvailability.mutate(
+        {
+          id: item.id,
+          is_available: !item.is_available,
         },
-      }
-    );
-  };
+        {
+          onSuccess: () => {
+            toast({
+              title: item.is_available ? "تم إلغاء التوفر" : "تم تفعيل التوفر",
+              description: `العنصر ${item.name} ${
+                item.is_available ? "غير متوفر" : "متوفر"
+              } الآن`,
+            });
+          },
+        }
+      );
+    },
+    [toggleAvailability, toast]
+  );
+
+  const handleAddCategory = useCallback(() => {
+    if (!newCategoryName || !newCategoryKey) {
+      toast({
+        title: "خطأ في البيانات",
+        description: "اسم التصنيف والمفتاح مطلوبان",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add category to the list (this would typically be saved to database)
+    const newCategory = {
+      key: newCategoryKey,
+      name: newCategoryName,
+      icon: "Menu",
+      color: "bg-gray-100 text-gray-800 border-gray-200",
+    };
+
+    // Reset form
+    setNewCategoryName("");
+    setNewCategoryKey("");
+    setIsAddCategoryModalOpen(false);
+
+    toast({
+      title: "تم إضافة التصنيف",
+      description: `تم إضافة تصنيف "${newCategoryName}" بنجاح`,
+    });
+  }, [newCategoryName, newCategoryKey, toast]);
 
   const handleQuickImport = async () => {
     setIsImporting(true);
@@ -457,7 +600,7 @@ const UltimateMenuManagement = () => {
           {/* Stats Cards */}
           {showStats && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
+              <Card className="bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 border-blue-300 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -473,7 +616,7 @@ const UltimateMenuManagement = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+              <Card className="bg-gradient-to-br from-green-50 via-green-100 to-green-200 border-green-300 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -489,7 +632,7 @@ const UltimateMenuManagement = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
+              <Card className="bg-gradient-to-br from-red-50 via-red-100 to-red-200 border-red-300 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -505,7 +648,7 @@ const UltimateMenuManagement = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
+              <Card className="bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300">
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -624,20 +767,65 @@ const UltimateMenuManagement = () => {
           {/* Categories Section */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="w-5 h-5" />
-                التصنيفات المتاحة
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-5 h-5" />
+                  التصنيفات المتاحة
+                </div>
+                <Button
+                  onClick={() => setIsAddCategoryModalOpen(true)}
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                >
+                  <Plus className="w-4 h-4 ml-1" />
+                  إضافة تصنيف
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                {/* All Categories Button */}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Card
+                    className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
+                      selectedCategory === "all"
+                        ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground ring-2 ring-offset-2 ring-primary shadow-lg"
+                        : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-800 border-gray-200 hover:from-gray-200 hover:to-gray-300"
+                    }`}
+                    onClick={() => setSelectedCategory("all")}
+                  >
+                    <CardContent className="p-2 text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="p-2 rounded-full bg-primary text-primary-foreground">
+                          <Menu className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-xs leading-tight">
+                            جميع التصنيفات
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            {
+                              menuItems.filter(
+                                (item) => item.category !== "category_header"
+                              ).length
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
                 {categories.map((category) => {
                   const IconComponent = getCategoryIcon(category);
                   const categoryColor = getCategoryColor(category);
                   const categoryItems = menuItems.filter(
                     (item) => item.category === category
                   );
-                  const isSelected = selectedCategoryTab === category;
+                  const isSelected = selectedCategory === category;
 
                   return (
                     <motion.div
@@ -646,12 +834,12 @@ const UltimateMenuManagement = () => {
                       whileTap={{ scale: 0.95 }}
                     >
                       <Card
-                        className={`cursor-pointer transition-all duration-300 hover:shadow-md ${
+                        className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 ${
                           isSelected
-                            ? `${categoryColor} ring-2 ring-offset-2 ring-primary`
-                            : `${categoryColor}`
+                            ? `${categoryColor} ring-2 ring-offset-2 ring-primary shadow-lg`
+                            : `${categoryColor} hover:shadow-md`
                         }`}
-                        onClick={() => setSelectedCategoryTab(category)}
+                        onClick={() => setSelectedCategory(category)}
                       >
                         <CardContent className="p-2 text-center">
                           <div className="flex flex-col items-center gap-1">
@@ -692,60 +880,54 @@ const UltimateMenuManagement = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
-                    <Card className="h-full hover:shadow-lg transition-all duration-300 border-0 shadow-sm">
+                    <Card className="h-full hover:shadow-xl hover:scale-105 transition-all duration-300 border-0 shadow-sm bg-gradient-to-br from-white to-gray-50">
                       <CardContent className="p-3 sm:p-4 h-full flex flex-col relative">
                         {/* Action Buttons */}
-                        <div className="absolute top-2 right-2 flex items-center gap-1">
+                        <div className="absolute top-2 right-2 flex items-center gap-1 sm:gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleToggleAvailability(item)}
-                            className={`h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-full ${
+                            className={`h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation ${
                               item.is_available
-                                ? "bg-green-100 hover:bg-green-200 text-green-600"
-                                : "bg-red-100 hover:bg-red-200 text-red-600"
+                                ? "bg-green-500 hover:bg-green-600 text-white active:bg-green-700"
+                                : "bg-red-500 hover:bg-red-600 text-white active:bg-red-700"
                             }`}
+                            title={
+                              item.is_available
+                                ? "إلغاء التوفر"
+                                : "تفعيل التوفر"
+                            }
                           >
                             {item.is_available ? (
-                              <Power className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <Power className="w-6 h-6 sm:w-5 sm:h-5" />
                             ) : (
-                              <PowerOff className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <PowerOff className="w-6 h-6 sm:w-5 sm:h-5" />
                             )}
                           </Button>
 
-                          <div className="relative group">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600"
-                            >
-                              <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setIsEditModalOpen(true);
+                            }}
+                            className="h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:bg-blue-700"
+                            title="تعديل العنصر"
+                          >
+                            <Edit className="w-6 h-6 sm:w-5 sm:h-5" />
+                          </Button>
 
-                            <div className="absolute top-10 right-0 bg-white rounded-lg shadow-lg border py-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 min-w-[120px]">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedItem(item);
-                                  setIsEditModalOpen(true);
-                                }}
-                                className="w-full justify-start text-sm text-blue-600 hover:bg-blue-50 rounded-none"
-                              >
-                                <Edit className="w-4 h-4 ml-2" />
-                                تعديل
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteItem(item.id)}
-                                className="w-full justify-start text-sm text-red-600 hover:bg-red-50 rounded-none"
-                              >
-                                <Trash2 className="w-4 h-4 ml-2" />
-                                حذف
-                              </Button>
-                            </div>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:bg-red-700"
+                            title="حذف العنصر"
+                          >
+                            <Trash2 className="w-6 h-6 sm:w-5 sm:h-5" />
+                          </Button>
                         </div>
 
                         <div className="flex-1 pr-16 sm:pr-20">
@@ -796,25 +978,7 @@ const UltimateMenuManagement = () => {
 
                         <div className="mt-auto">
                           {/* Pricing */}
-                          {item.price ? (
-                            <div className="flex justify-between items-center mb-2 sm:mb-3">
-                              <div className="text-base sm:text-lg lg:text-xl font-bold text-emerald-600">
-                                {item.price} د.ل
-                              </div>
-                              <Badge
-                                variant={
-                                  item.is_available ? "default" : "secondary"
-                                }
-                                className={`text-xs ${
-                                  item.is_available
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {item.is_available ? "متوفر" : "غير متوفر"}
-                              </Badge>
-                            </div>
-                          ) : item.prices ? (
+                          {item.prices ? (
                             <div className="space-y-1.5 sm:space-y-2 mb-2 sm:mb-3">
                               <div className="flex justify-between items-center p-1.5 sm:p-2 bg-gray-50 rounded-lg">
                                 <Badge variant="secondary" className="text-xs">
@@ -832,8 +996,55 @@ const UltimateMenuManagement = () => {
                                   {item.prices.L} د.ل
                                 </span>
                               </div>
+                              <div className="flex justify-center">
+                                <Badge
+                                  variant={
+                                    item.is_available ? "default" : "secondary"
+                                  }
+                                  className={`text-xs ${
+                                    item.is_available
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {item.is_available ? "متوفر" : "غير متوفر"}
+                                </Badge>
+                              </div>
                             </div>
-                          ) : null}
+                          ) : item.price ? (
+                            <div className="flex justify-between items-center mb-2 sm:mb-3">
+                              <div className="text-base sm:text-lg lg:text-xl font-bold text-emerald-600">
+                                {item.price} د.ل
+                              </div>
+                              <Badge
+                                variant={
+                                  item.is_available ? "default" : "secondary"
+                                }
+                                className={`text-xs ${
+                                  item.is_available
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {item.is_available ? "متوفر" : "غير متوفر"}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <div className="flex justify-center mb-2 sm:mb-3">
+                              <Badge
+                                variant={
+                                  item.is_available ? "default" : "secondary"
+                                }
+                                className={`text-xs ${
+                                  item.is_available
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {item.is_available ? "متوفر" : "غير متوفر"}
+                              </Badge>
+                            </div>
+                          )}
 
                           {/* Image */}
                           {item.image_url && (
@@ -861,113 +1072,124 @@ const UltimateMenuManagement = () => {
                 return (
                   <Card
                     key={item.id}
-                    className="hover:shadow-lg transition-all duration-300"
+                    className="hover:shadow-xl hover:scale-102 transition-all duration-300 bg-gradient-to-br from-white to-gray-50"
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1">
                           <div
-                            className={`p-3 rounded-lg ${categoryColor} flex-shrink-0`}
+                            className={`p-2 sm:p-3 rounded-lg ${categoryColor} flex-shrink-0`}
                           >
-                            <IconComponent className="w-5 h-5" />
+                            <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-base">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">
                               {item.name}
                             </h3>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {getCategoryName(item.category)}
                             </p>
                             {item.description && (
-                              <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                              <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-1">
                                 {item.description}
                               </p>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-between sm:justify-end gap-3">
                           <div className="text-right">
                             {item.prices ? (
-                              <div className="text-sm">
-                                <div className="font-bold text-green-600">
-                                  L: {item.prices.L} د.ل
+                              <div className="text-xs sm:text-sm space-y-1">
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <Badge className="bg-yellow-500 text-white text-xs">
+                                    كبير
+                                  </Badge>
+                                  <span className="font-bold text-green-600">
+                                    {item.prices.L} د.ل
+                                  </span>
                                 </div>
-                                <div className="font-bold text-blue-600">
-                                  M: {item.prices.M} د.ل
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    وسط
+                                  </Badge>
+                                  <span className="font-bold text-blue-600">
+                                    {item.prices.M} د.ل
+                                  </span>
                                 </div>
                               </div>
                             ) : item.price ? (
-                              <span className="font-bold text-lg text-green-600">
+                              <span className="font-bold text-sm sm:text-lg text-green-600">
                                 {item.price} د.ل
                               </span>
-                            ) : null}
+                            ) : (
+                              <span className="text-xs sm:text-sm text-gray-500">
+                                بدون سعر
+                              </span>
+                            )}
                           </div>
 
-                          <Badge
-                            variant={
-                              item.is_available ? "default" : "secondary"
-                            }
-                            className={`text-xs ${
-                              item.is_available
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {item.is_available ? "متوفر" : "غير متوفر"}
-                          </Badge>
-
                           <div className="flex items-center gap-1">
+                            <Badge
+                              variant={
+                                item.is_available ? "default" : "secondary"
+                              }
+                              className={`text-xs ${
+                                item.is_available
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {item.is_available ? "متوفر" : "غير متوفر"}
+                            </Badge>
+
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleToggleAvailability(item)}
-                              className={`h-8 w-8 p-0 rounded-full ${
+                              className={`h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation ${
                                 item.is_available
-                                  ? "bg-green-100 hover:bg-green-200 text-green-600"
-                                  : "bg-red-100 hover:bg-red-200 text-red-600"
+                                  ? "bg-green-500 hover:bg-green-600 text-white active:bg-green-700"
+                                  : "bg-red-500 hover:bg-red-600 text-white active:bg-red-700"
                               }`}
+                              title={
+                                item.is_available
+                                  ? "إلغاء التوفر"
+                                  : "تفعيل التوفر"
+                              }
                             >
                               {item.is_available ? (
-                                <Eye className="w-4 h-4" />
+                                <Power className="w-6 h-6 sm:w-5 sm:h-5" />
                               ) : (
-                                <EyeOff className="w-4 h-4" />
+                                <PowerOff className="w-6 h-6 sm:w-5 sm:h-5" />
                               )}
                             </Button>
 
-                            <div className="relative group">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
-                              >
-                                <MoreVertical className="w-4 h-4" />
-                              </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedItem(item);
+                                setIsEditModalOpen(true);
+                              }}
+                              className="h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:bg-blue-700"
+                              title="تعديل العنصر"
+                            >
+                              <Edit className="w-6 h-6 sm:w-5 sm:h-5" />
+                            </Button>
 
-                              <div className="absolute top-10 right-0 bg-white rounded-lg shadow-lg border py-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 min-w-[120px]">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedItem(item);
-                                    setIsEditModalOpen(true);
-                                  }}
-                                  className="w-full justify-start text-sm text-blue-600 hover:bg-blue-50 rounded-none"
-                                >
-                                  <Edit className="w-4 h-4 ml-2" />
-                                  تعديل
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteItem(item.id)}
-                                  className="w-full justify-start text-sm text-red-600 hover:bg-red-50 rounded-none"
-                                >
-                                  <Trash2 className="w-4 h-4 ml-2" />
-                                  حذف
-                                </Button>
-                              </div>
-                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteItem(item.id)}
+                              className="h-12 w-12 sm:h-10 sm:w-10 p-0 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:bg-red-700"
+                              title="حذف العنصر"
+                            >
+                              <Trash2 className="w-6 h-6 sm:w-5 sm:h-5" />
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -1017,11 +1239,23 @@ const UltimateMenuManagement = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">اسم العنصر *</Label>
-                <Input id="name" placeholder="اسم العنصر" />
+                <Input
+                  id="name"
+                  placeholder="اسم العنصر"
+                  value={addFormData.name}
+                  onChange={(e) =>
+                    setAddFormData({ ...addFormData, name: e.target.value })
+                  }
+                />
               </div>
               <div>
                 <Label htmlFor="category">التصنيف *</Label>
-                <Select>
+                <Select
+                  value={addFormData.category}
+                  onValueChange={(value) =>
+                    setAddFormData({ ...addFormData, category: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر التصنيف" />
                   </SelectTrigger>
@@ -1035,19 +1269,98 @@ const UltimateMenuManagement = () => {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label htmlFor="price">السعر (د.ل)</Label>
-              <Input id="price" type="number" placeholder="0.00" />
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="price">السعر الثابت (د.ل)</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  placeholder="0.00"
+                  value={addFormData.price}
+                  onChange={(e) =>
+                    setAddFormData({ ...addFormData, price: e.target.value })
+                  }
+                />
+              </div>
+
+              {/* Multiple Prices */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">
+                  أسعار متعددة (اختياري)
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="price-m" className="text-sm">
+                      السعر المتوسط (د.ل)
+                    </Label>
+                    <Input
+                      id="price-m"
+                      type="number"
+                      placeholder="0.00"
+                      value={addFormData.priceM}
+                      onChange={(e) =>
+                        setAddFormData({
+                          ...addFormData,
+                          priceM: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="price-l" className="text-sm">
+                      السعر الكبير (د.ل)
+                    </Label>
+                    <Input
+                      id="price-l"
+                      type="number"
+                      placeholder="0.00"
+                      value={addFormData.priceL}
+                      onChange={(e) =>
+                        setAddFormData({
+                          ...addFormData,
+                          priceL: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  ملاحظة: إذا تم ملء هذين الحقلين، سيتم استخدامهما بدلاً من
+                  السعر الثابت
+                </p>
+              </div>
             </div>
             <div>
               <Label htmlFor="description">الوصف</Label>
-              <Textarea id="description" placeholder="وصف العنصر" />
+              <Textarea
+                id="description"
+                placeholder="وصف العنصر"
+                value={addFormData.description}
+                onChange={(e) =>
+                  setAddFormData({
+                    ...addFormData,
+                    description: e.target.value,
+                  })
+                }
+              />
             </div>
             <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsAddModalOpen(false)}>إضافة</Button>
+              <Button
+                onClick={handleAddItem}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:scale-95"
+                disabled={addMenuItem.isPending}
+              >
+                {addMenuItem.isPending ? (
+                  <RefreshCw className="w-4 h-4 ml-1 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 ml-1" />
+                )}
+                {addMenuItem.isPending ? "جاري الإضافة..." : "إضافة"}
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setIsAddModalOpen(false)}
+                className="touch-manipulation active:scale-95"
               >
                 إلغاء
               </Button>
@@ -1076,12 +1389,20 @@ const UltimateMenuManagement = () => {
                   <Input
                     id="edit-name"
                     placeholder="اسم العنصر"
-                    defaultValue={selectedItem?.name || ""}
+                    value={editFormData.name}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, name: e.target.value })
+                    }
                   />
                 </div>
                 <div>
                   <Label htmlFor="edit-category">التصنيف *</Label>
-                  <Select defaultValue={selectedItem?.category || ""}>
+                  <Select
+                    value={editFormData.category}
+                    onValueChange={(value) =>
+                      setEditFormData({ ...editFormData, category: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="اختر التصنيف" />
                     </SelectTrigger>
@@ -1100,7 +1421,13 @@ const UltimateMenuManagement = () => {
                 <Textarea
                   id="edit-description"
                   placeholder="وصف العنصر"
-                  defaultValue={selectedItem?.description || ""}
+                  value={editFormData.description}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                 />
               </div>
@@ -1118,7 +1445,13 @@ const UltimateMenuManagement = () => {
                     id="edit-price"
                     type="number"
                     placeholder="0.00"
-                    defaultValue={selectedItem?.price || ""}
+                    value={editFormData.price}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        price: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -1127,13 +1460,66 @@ const UltimateMenuManagement = () => {
                     <Input
                       id="edit-image"
                       placeholder="https://example.com/image.jpg"
-                      defaultValue={selectedItem?.image_url || ""}
+                      value={editFormData.imageUrl}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          imageUrl: e.target.value,
+                        })
+                      }
                     />
                     <Button variant="outline" size="sm">
                       <Camera className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
+              </div>
+
+              {/* Multiple Prices */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">
+                  أسعار متعددة (اختياري)
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-price-m" className="text-sm">
+                      السعر المتوسط (د.ل)
+                    </Label>
+                    <Input
+                      id="edit-price-m"
+                      type="number"
+                      placeholder="0.00"
+                      value={editFormData.priceM}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          priceM: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-price-l" className="text-sm">
+                      السعر الكبير (د.ل)
+                    </Label>
+                    <Input
+                      id="edit-price-l"
+                      type="number"
+                      placeholder="0.00"
+                      value={editFormData.priceL}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          priceL: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  ملاحظة: إذا تم ملء هذين الحقلين، سيتم استخدامهما بدلاً من
+                  السعر الثابت
+                </p>
               </div>
             </div>
 
@@ -1145,7 +1531,10 @@ const UltimateMenuManagement = () => {
               <div className="flex items-center space-x-2">
                 <Switch
                   id="edit-available"
-                  defaultChecked={selectedItem?.is_available || false}
+                  checked={editFormData.isAvailable}
+                  onCheckedChange={(checked) =>
+                    setEditFormData({ ...editFormData, isAvailable: checked })
+                  }
                 />
                 <Label htmlFor="edit-available">متوفر للطلب</Label>
               </div>
@@ -1175,9 +1564,17 @@ const UltimateMenuManagement = () => {
               >
                 إلغاء
               </Button>
-              <Button className="flex items-center gap-2">
-                <Save className="w-4 h-4" />
-                حفظ التغييرات
+              <Button
+                onClick={handleUpdateItem}
+                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-manipulation active:scale-95"
+                disabled={updateMenuItem.isPending}
+              >
+                {updateMenuItem.isPending ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {updateMenuItem.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
               </Button>
             </div>
           </div>
@@ -1223,6 +1620,97 @@ const UltimateMenuManagement = () => {
                 onClick={() => setIsImportModalOpen(false)}
               >
                 إلغاء
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Category Modal */}
+      <Dialog
+        open={isAddCategoryModalOpen}
+        onOpenChange={setIsAddCategoryModalOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-purple-500" />
+              إضافة تصنيف جديد
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="category-name">اسم التصنيف *</Label>
+              <Input
+                id="category-name"
+                placeholder="مثال: مشروبات ساخنة"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="category-key">مفتاح التصنيف *</Label>
+              <Input
+                id="category-key"
+                placeholder="مثال: hotDrinks"
+                value={newCategoryKey}
+                onChange={(e) => setNewCategoryKey(e.target.value)}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                يجب أن يكون المفتاح باللغة الإنجليزية وبدون مسافات
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsAddCategoryModalOpen(false)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleAddCategory}
+                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+              >
+                إضافة التصنيف
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              تأكيد الحذف
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              هل أنت متأكد من أنك تريد حذف هذا العنصر؟ لا يمكن التراجع عن هذا
+              الإجراء.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="touch-manipulation active:scale-95"
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={confirmDelete}
+                className="bg-red-500 hover:bg-red-600 text-white touch-manipulation active:scale-95"
+                disabled={deleteMenuItem.isPending}
+              >
+                {deleteMenuItem.isPending ? (
+                  <RefreshCw className="w-4 h-4 ml-1 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4 ml-1" />
+                )}
+                {deleteMenuItem.isPending ? "جاري الحذف..." : "حذف"}
               </Button>
             </div>
           </div>

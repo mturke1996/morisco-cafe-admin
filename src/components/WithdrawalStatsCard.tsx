@@ -62,7 +62,8 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
       // Get today's withdrawals
       const { data: todayData, error: todayError } = await supabase
         .from("employee_withdrawals")
-        .select(`
+        .select(
+          `
           id,
           amount,
           withdrawal_date,
@@ -71,7 +72,8 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
             name,
             position
           )
-        `)
+        `
+        )
         .eq("withdrawal_date", targetDate);
 
       if (todayError) throw todayError;
@@ -84,7 +86,8 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
 
       const { data: monthData, error: monthError } = await supabase
         .from("employee_withdrawals")
-        .select(`
+        .select(
+          `
           id,
           amount,
           withdrawal_date,
@@ -93,7 +96,8 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
             name,
             position
           )
-        `)
+        `
+        )
         .gte("withdrawal_date", startOfMonth.toISOString().split("T")[0])
         .lte("withdrawal_date", endOfMonth.toISOString().split("T")[0]);
 
@@ -107,7 +111,9 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
       // Calculate stats
       const todayAmount = todayData?.reduce((sum, w) => sum + w.amount, 0) || 0;
       const monthAmount = monthData?.reduce((sum, w) => sum + w.amount, 0) || 0;
-      const averageAmount = monthData?.length ? monthAmount / monthData.length : 0;
+      const averageAmount = monthData?.length
+        ? monthAmount / monthData.length
+        : 0;
 
       setStats({
         totalWithdrawals: monthData?.length || 0,
@@ -219,20 +225,23 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
             <div>
               <h4 className="font-medium text-sm mb-3 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
-                السحوبات الأخيرة اليوم
+                السحوبات اليومية
+                <Badge variant="secondary" className="text-xs">
+                  {stats.recentWithdrawals.length}
+                </Badge>
               </h4>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {stats.recentWithdrawals.map((withdrawal) => (
                   <div
                     key={withdrawal.id}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200 hover:shadow-sm transition-shadow"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-sm truncate">
                           {withdrawal.employees?.name || "غير محدد"}
                         </span>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs bg-white">
                           {withdrawal.employees?.position || "موظف"}
                         </Badge>
                       </div>
@@ -241,14 +250,24 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
                           {withdrawal.notes}
                         </p>
                       )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(withdrawal.withdrawal_date)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(withdrawal.withdrawal_date)}
+                        </span>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-red-600 text-sm">
+                      <p className="font-bold text-red-600 text-lg">
                         {formatCurrency(withdrawal.amount)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatTime(withdrawal.withdrawal_date)}
-                      </p>
+                      <div className="flex items-center gap-1 text-xs text-red-500">
+                        <Minus className="w-3 h-3" />
+                        <span>سحب</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -259,8 +278,11 @@ const WithdrawalStatsCard = ({ selectedDate }: WithdrawalStatsCardProps) => {
           {/* No withdrawals message */}
           {stats.recentWithdrawals.length === 0 && (
             <div className="text-center py-6 text-muted-foreground">
-              <Minus className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-sm">لا توجد سحوبات اليوم</p>
+              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <p className="text-sm font-medium">لا توجد سحوبات اليوم</p>
+              <p className="text-xs mt-1">جميع الموظفين لم يسحبوا أي مبالغ</p>
             </div>
           )}
         </div>
